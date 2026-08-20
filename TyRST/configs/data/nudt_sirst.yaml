@@ -1,0 +1,25 @@
+# configs/data/nudt_sirst.yaml
+# NUDT-SIRST original distribution = FLAT layout (one images/ + one masks/ dir),
+# with the train/test split defined by index .txt files (under img_idx/).
+path: ../../datasets/NUDT-SIRST
+
+# Point each split at its index .txt file (one image stem per line, no extension).
+# Check the exact names with:  ls ../../datasets/NUDT-SIRST/img_idx/
+train: img_idx/train_NUDT-SIRST.txt
+val:   img_idx/test_NUDT-SIRST.txt
+test:  img_idx/test_NUDT-SIRST.txt
+
+nc: 1
+names: [target]
+
+# --- flat-layout dirs (index mode) ---
+images: images        # flat image directory under `path`
+masks:  masks         # flat mask  directory under `path`
+mask_suffix: ""       # try "_pixels0" if NUDT masks use that suffix
+
+# --- common ---
+imgsz: 256            # train-time square resize (NUDT-SIRST native = 256)
+
+# If instead you have a pre-split folder layout (images/train, images/test),
+# just set:  train: images/train   val: images/test   test: images/test
+# and the loader will auto-switch to folder mode.

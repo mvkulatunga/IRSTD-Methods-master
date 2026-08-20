@@ -1,0 +1,4 @@
+stage,params,gflops,precision,recall,f1,map50,abs_pct_diff_params,abs_pct_diff_gflops,abs_pct_diff_precision,abs_pct_diff_recall,abs_pct_diff_f1,abs_pct_diff_map50
+Stage1 (no CA),2775868,50.6,99.73,95.11,97.37,97.97,36.74,,3.03,0.72,1.11,
+Stage2 (with CA),2780524,50.77,99.46,94.14,96.73,96.32,36.97,,2.75,1.73,0.44,
+Pruned (p2),1602953,37.43,94.74,75.83,84.24,87.09,21.04,,2.13,20.85,12.53,

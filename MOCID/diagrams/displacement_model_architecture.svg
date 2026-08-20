@@ -1,0 +1,64 @@
+<svg width="100%" viewBox="0 0 720 560" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Displacement Modeling Network (per scale)</title>
+<desc>For each of the 3 scales, the target feature interacts with each reference feature through a shared DAM module; the stacked DAM outputs are max-pooled over the frame axis to produce one displacement context per scale.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<g style="font-family:sans-serif; font-size:14px;">
+
+<!-- per-scale outer context -->
+<rect x="20" y="15" width="680" height="470" rx="10" fill="#fbfbfd" stroke="#9aa0aa" stroke-width="1" stroke-dasharray="5 4"/>
+<text x="40" y="38" text-anchor="start" fill="#5a6172" font-style="italic">for s in range(3 scales):  feats_by_scale[s] = f  →  shape (B, T, C, H, W)</text>
+
+<!-- inputs -->
+<rect x="260" y="55" width="200" height="42" rx="6" fill="#eef3fe" stroke="#4a74b7" stroke-width="0.5"/>
+<text x="360" y="77" text-anchor="middle" fill="#2c4c7e" font-weight="500">Target  F_T = f[:, -1]</text>
+
+<rect x="55" y="140" width="150" height="42" rx="4" fill="#f1efe8" stroke="#5f5e5a" stroke-width="0.5"/>
+<text x="130" y="162" text-anchor="middle" fill="#444445">Ref  f[:, 0]</text>
+<rect x="285" y="140" width="150" height="42" rx="4" fill="#f1efe8" stroke="#5f5e5a" stroke-width="0.5"/>
+<text x="360" y="162" text-anchor="middle" fill="#444445">Ref  f[:, 1]</text>
+<rect x="515" y="140" width="150" height="42" rx="4" fill="#f1efe8" stroke="#5f5e5a" stroke-width="0.5"/>
+<text x="590" y="162" text-anchor="middle" fill="#444445">Ref  f[:, T-2]</text>
+
+<path d="M 260 76 L 130 76 L 130 140" fill="none" stroke="#4a74b7" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 360 97 L 360 140" fill="none" stroke="#4a74b7" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 460 76 L 590 76 L 590 140" fill="none" stroke="#4a74b7" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<line x1="130" y1="182" x2="130" y2="225" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="360" y1="182" x2="360" y2="225" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="590" y1="182" x2="590" y2="225" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- shared DAM (dams[s]) -->
+<rect x="50" y="225" width="160" height="52" rx="6" fill="#feebe6" stroke="#b74a30" stroke-width="0.5"/>
+<text x="130" y="248" text-anchor="middle" fill="#7e2c18" font-weight="500">dams[s]</text>
+<text x="130" y="266" text-anchor="middle" fill="#a35a44" font-size="12px">(F_T, f[:,0])</text>
+<rect x="280" y="225" width="160" height="52" rx="6" fill="#feebe6" stroke="#b74a30" stroke-width="0.5"/>
+<text x="360" y="248" text-anchor="middle" fill="#7e2c18" font-weight="500">dams[s]</text>
+<text x="360" y="266" text-anchor="middle" fill="#a35a44" font-size="12px">(F_T, f[:,1])</text>
+<rect x="510" y="225" width="160" height="52" rx="6" fill="#feebe6" stroke="#b74a30" stroke-width="0.5"/>
+<text x="590" y="248" text-anchor="middle" fill="#7e2c18" font-weight="500">dams[s]</text>
+<text x="590" y="266" text-anchor="middle" fill="#a35a44" font-size="12px">(F_T, f[:,T-2])</text>
+
+<text x="360" y="300" text-anchor="middle" fill="#7e2c18" font-size="12px" font-style="italic">same weights shared across all T-1 references</text>
+
+<line x1="130" y1="277" x2="130" y2="330" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="360" y1="277" x2="360" y2="330" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="590" y1="277" x2="590" y2="330" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- stack -->
+<rect x="150" y="330" width="420" height="46" rx="6" fill="#fff8e6" stroke="#c69026" stroke-width="0.5"/>
+<text x="360" y="358" text-anchor="middle" fill="#7a5b12" font-weight="500">torch.stack([...], dim=1)  →  F_f  (B, T-1, C, H, W)</text>
+
+<line x1="360" y1="376" x2="360" y2="410" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- NOTE: pooling is NOT here -->
+<rect x="150" y="410" width="420" height="58" rx="6" fill="#edfdf3" stroke="#2ea366" stroke-width="0.5"/>
+<text x="360" y="434" text-anchor="middle" fill="#1b613c" font-weight="500">append to f_f_unpooled[s]</text>
+<text x="360" y="454" text-anchor="middle" fill="#3a7a55" font-size="12px">returned UNPOOLED — pooling happens later in MOCID</text>
+
+<!-- outputs -->
+<line x1="360" y1="485" x2="360" y2="512" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="360" y="534" text-anchor="middle" fill="#444445" font-weight="bold">f_f_unpooled = [ scale0, scale1, scale2 ]  (each B, T-1, C, H, W)</text>
+</g>
+</svg>

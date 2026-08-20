@@ -1,0 +1,18 @@
+# configs/data/combined_sirst.yaml
+# Cross-dataset (Sec 5.3): train on NUAA+NUDT, validate/test on ALL of IRSTD-1k.
+path: ../../datasets/ISTD
+train:
+  - NUAA-sirst/images/train
+  - NUAA-sirst/images/test
+  - NUDT-SIRST/images/train
+  - NUDT-SIRST/images/test
+val:
+  - IRSTD-1k/images/train
+  - IRSTD-1k/images/val
+  - IRSTD-1k/images/test
+test:
+  - IRSTD-1k/images/train
+  - IRSTD-1k/images/val
+  - IRSTD-1k/images/test
+nc: 1
+names: [target]

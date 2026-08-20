@@ -1,0 +1,39 @@
+# Parameters
+nc: 1 
+scales:
+  n: [0.50, 0.25, 1024] 
+
+# TY-RIST Backbone (Stays Active to provide robust feature extraction)
+backbone:
+  - [-1, 1, Conv, [64, 3, 1]]          # 0 -> Stage C1
+  - [-1, 1, Conv, [128, 3, 2]]         # 1 -> Stage C2
+  - [-1, 2, C3k2, [256, False, 0.25]]  # 2 -> Stage C2 Refinement
+  - [-1, 1, Conv, [256, 3, 2]]         # 3 -> Stage C3
+  - [-1, 2, C3k2, [512, False, 0.25]]  # 4 -> Stage C3 Refinement
+  - [-1, 1, Conv, [512, 3, 2]]         # 5 -> Stage C4
+  - [-1, 4, A2C2f, [512, True, 4]]     # 6 -> Stage C4 Refinement
+  - [-1, 1, Conv, [1024, 3, 2]]        # 7 -> Stage C5
+  - [-1, 4, A2C2f, [1024, True, 1]]    # 8 -> Stage C5 Global Features
+
+# Optimized Trimmed Head Section (Pure P2 Processing Stream)
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 9  -> Upsample C5
+  - [[-1, 6], 1, Concat, [1]]                  # 10 -> Combine with Backbone C4
+  - [-1, 2, A2C2f, [512, False, -1]]           # 11 -> FPN C4 Output
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 12 -> Upsample Layer 11
+  - [[-1, 4], 1, Concat, [1]]                  # 13 -> Combine with Backbone C3
+  - [-1, 2, A2C2f, [256, False, -1]]           # 14 -> FPN C3 Output
+
+  # The Identity Pipeline Shortcut: N1 directly to P2 Head
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 15 -> Upsample Layer 14 to 320x320
+  - [[-1, 2], 1, Concat, [1]]                  # 16 -> Pink Concat with Backbone C2 (Layer 2)
+  - [-1, 2, A2C2f, [256, False, -1]]           # 17 -> Stage N1 Feature Map
+
+  # Cascaded Location Filtering for Head P2
+  - [-1, 1, CoordAtt, [64]]                      # 18 -> CA 1
+  - [-1, 1, CoordAtt, [64]]                      # 19 -> CA 2
+  - [-1, 1, CoordAtt, [64]]                      # 20 -> CA 3 [Feeds Head P2]
+
+  # PAN layers 21-29 are completely removed to stop downsampling error propagation
+  - [[20], 1, Detect, [nc]]                    # 21 -> Dedicated Single Head (P2 Only)

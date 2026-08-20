@@ -1,0 +1,38 @@
+# TY-RIST Stage-1 base graph: 4-head, NO Coordinate Attention.
+# Identical to full_training_graph.yaml minus the 3 CA blocks (18-20).
+# Adding CA in Stage 2 shifts every layer at index >= 18 up by 3.
+nc: 1
+scales:
+  n: [0.50, 0.25, 1024]
+
+backbone:
+  - [-1, 1, Conv,  [64, 3, 1]]          # 0  C1 (stride-1 stem)
+  - [-1, 1, Conv,  [128, 3, 2]]         # 1  C2
+  - [-1, 2, C3k2,  [256, False, 0.25]]  # 2  C2 refine [feeds N1]
+  - [-1, 1, Conv,  [256, 3, 2]]         # 3  C3
+  - [-1, 2, C3k2,  [512, False, 0.25]]  # 4  C3 refine
+  - [-1, 1, Conv,  [512, 3, 2]]         # 5  C4
+  - [-1, 4, A2C2f, [512, True, 4]]      # 6  C4 refine
+  - [-1, 1, Conv,  [1024, 3, 2]]        # 7  C5
+  - [-1, 4, A2C2f, [1024, True, 1]]     # 8  C5 global
+
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 9
+  - [[-1, 6], 1, Concat, [1]]                   # 10  + C4
+  - [-1, 2, A2C2f, [512, False, -1]]            # 11  FPN C4
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  # 12
+  - [[-1, 4], 1, Concat, [1]]                    # 13  + C3
+  - [-1, 2, A2C2f, [256, False, -1]]            # 14  FPN C3
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  # 15
+  - [[-1, 2], 1, Concat, [1]]                    # 16  + C2 (pink)
+  - [-1, 2, A2C2f, [256, False, -1]]            # 17  N1  [feeds P2 directly]
+  - [17, 1, Conv, [256, 3, 2]]                  # 18  downsample N1
+  - [[-1, 14], 1, Concat, [1]]                  # 19  + FPN C3
+  - [-1, 2, A2C2f, [256, False, -1]]            # 20  N2  [feeds P3]
+  - [-1, 1, Conv, [512, 3, 2]]                  # 21  downsample N2
+  - [[-1, 11], 1, Concat, [1]]                  # 22  + FPN C4
+  - [-1, 2, A2C2f, [512, False, -1]]            # 23  N3  [feeds P4]
+  - [-1, 1, Conv, [512, 3, 2]]                  # 24  downsample N3
+  - [[-1, 8], 1, Concat, [1]]                   # 25  + C5
+  - [-1, 2, A2C2f, [1024, True, -1]]            # 26  deepest PAN [feeds P5]
+  - [[17, 20, 23, 26], 1, Detect, [nc]]         # 27  Detect (P2, P3, P4, P5)

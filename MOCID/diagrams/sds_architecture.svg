@@ -1,0 +1,32 @@
+<svg width="100%" viewBox="0 0 680 440" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Spatio-temporal Difference Selection (SDS)</title>
+<desc>Flowchart of SDS processing: target and reference frames are stacked into a 3D tensor, passed through 3D Central Difference Convolution, and split into delta, B, and C parameters.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<g style="font-family:sans-serif; font-size:14px;">
+<rect x="130" y="20" width="160" height="50" rx="6" fill="#f1efe8" stroke="#5f5e5a" stroke-width="0.5"/>
+<text x="210" y="45" text-anchor="middle" fill="#444445" font-weight="500">Target F_T</text>
+<rect x="390" y="20" width="160" height="50" rx="6" fill="#f1efe8" stroke="#5f5e5a" stroke-width="0.5"/>
+<text x="470" y="45" text-anchor="middle" fill="#444445" font-weight="500">Reference F_R</text>
+<path d="M 210 70 L 210 100 L 300 120" fill="none" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 470 70 L 470 100 L 380 120" fill="none" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<rect x="240" y="120" width="200" height="50" rx="6" fill="#eef3fe" stroke="#4a74b7" stroke-width="0.5"/>
+<text x="340" y="145" text-anchor="middle" fill="#2c4c7e" font-weight="500">torch.stack(dim=2)</text>
+<line x1="340" y1="170" x2="340" y2="210" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<rect x="240" y="210" width="200" height="50" rx="6" fill="#feebe6" stroke="#b74a30" stroke-width="0.5"/>
+<text x="340" y="235" text-anchor="middle" fill="#7e2c18" font-weight="500">3DCDC Block</text>
+<line x1="340" y1="260" x2="340" y2="300" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<rect x="240" y="300" width="200" height="50" rx="6" fill="#edfdf3" stroke="#2ea366" stroke-width="0.5"/>
+<text x="340" y="325" text-anchor="middle" fill="#1b613c" font-weight="500">torch.split</text>
+<path d="M 240 325 L 140 325 L 140 360" fill="none" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 340 350 L 340 360" fill="none" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M 440 325 L 540 325 L 540 360" fill="none" stroke="#898781" stroke-width="1.5" marker-end="url(#arrow)"/>
+<rect x="60" y="360" width="160" height="40" rx="4" fill="#fcfcfc" stroke="#898781" stroke-width="0.5"/>
+<text x="140" y="385" text-anchor="middle" fill="#444445">delta (via dt_proj)</text>
+<rect x="260" y="360" width="160" height="40" rx="4" fill="#fcfcfc" stroke="#898781" stroke-width="0.5"/>
+<text x="340" y="385" text-anchor="middle" fill="#444445">B Parameter</text>
+<rect x="460" y="360" width="160" height="40" rx="4" fill="#fcfcfc" stroke="#898781" stroke-width="0.5"/>
+<text x="540" y="385" text-anchor="middle" fill="#444445">C Parameter</text>
+</g>
+</svg>

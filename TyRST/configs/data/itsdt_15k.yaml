@@ -1,0 +1,9 @@
+# ITSDT-15k (multi-frame, evaluated single-frame; TY-RIST Sec 4.3/5.1)
+# Official split: sequences 1-76 train, 77-87 val.
+# path is relative to the repo root (/TyRST); run training from there.
+path: ../../datasets/ITSDT-15k/yolo
+train: images/train
+val: images/val
+test: images/val
+nc: 1
+names: [target]

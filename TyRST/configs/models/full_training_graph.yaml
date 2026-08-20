@@ -1,0 +1,52 @@
+# Parameters
+nc: 1 # Target vs Background
+scales:
+  n: [0.50, 0.25, 1024] 
+
+# TY-RIST Backbone
+backbone:
+  - [-1, 1, Conv, [64, 3, 1]]          # 0 -> Stage C1 (640x640)
+  - [-1, 1, Conv, [128, 3, 2]]         # 1 -> Stage C2 Downsampler (320x320)
+  - [-1, 2, C3k2, [256, False, 0.25]]  # 2 -> Stage C2 Refinement [Feeds N1 & P2]
+  - [-1, 1, Conv, [256, 3, 2]]         # 3 -> Stage C3 Downsampler (160x160)
+  - [-1, 2, C3k2, [512, False, 0.25]]  # 4 -> Stage C3 Refinement
+  - [-1, 1, Conv, [512, 3, 2]]         # 5 -> Stage C4 Downsampler (80x80)
+  - [-1, 4, A2C2f, [512, True, 4]]     # 6 -> Stage C4 Refinement
+  - [-1, 1, Conv, [1024, 3, 2]]        # 7 -> Stage C5 Downsampler (40x40)
+  - [-1, 4, A2C2f, [1024, True, 1]]    # 8 -> Stage C5 Global Context Map
+
+# TY-RIST Full Neck & Head Structure
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 9  -> Upsample C5 (40x40 -> 80x80)
+  - [[-1, 6], 1, Concat, [1]]                  # 10 -> (+) Combine with Backbone C4
+  - [-1, 2, A2C2f, [512, False, -1]]           # 11 -> FPN Stage C4 Output
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 12 -> Upsample Layer 11 (80x80 -> 160x160)
+  - [[-1, 4], 1, Concat, [1]]                  # 13 -> (+) Combine with Backbone C3
+  - [-1, 2, A2C2f, [256, False, -1]]           # 14 -> FPN Stage C3 Output
+
+# --- TY-RIST Expansion: Custom C2 Skip-Connection to High-Resolution N1 ---
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # Layer 15 -> Pink Upsample Layer 14 (160x160 -> 320x320)
+  - [[-1, 2], 1, Concat, [1]]                  # Layer 16 -> Pink (+) Concat with Backbone C2 (Layer 2)
+  - [-1, 2, A2C2f, [256, False, -1]]           # Layer 17 -> Stage N1 Block (Updated from 128 to 256 to fix ABlock alignment)
+
+  # Cascaded Coordinate Attention (3x)
+  - [-1, 1, CoordAtt, [64]]                      # 18 -> CA 1
+  - [-1, 1, CoordAtt, [64]]                      # 19 -> CA 2
+  - [-1, 1, CoordAtt, [64]]                      # 20 -> CA 3 [Feeds Head P2]
+
+  # Bottom-Up PAN Modules
+  - [17, 1, Conv, [256, 3, 2]]                 # 21 -> Downsample N1 to 160x160
+  - [[-1, 14], 1, Concat, [1]]                 # 22 -> (+) Fused with FPN C3
+  - [-1, 2, A2C2f, [256, False, -1]]           # 23 -> Stage N2 Block [Feeds Head P3]
+
+  - [-1, 1, Conv, [512, 3, 2]]                 # 24 -> Downsample N2 to 80x80
+  - [[-1, 11], 1, Concat, [1]]                 # 25 -> (+) Fused with FPN C4
+  - [-1, 2, A2C2f, [512, False, -1]]           # 26 -> Stage N3 Block [Feeds Head P4]
+
+  - [-1, 1, Conv, [512, 3, 2]]                 # 27 -> Downsample N3 to 40x40
+  - [[-1, 8], 1, Concat, [1]]                  # 28 -> (+) Fused with Backbone C5
+  - [-1, 2, A2C2f, [1024, True, -1]]           # 29 -> Deepest Block Updated to A2C2f to match Diagram Legend
+
+  # Complete 4-Scale Prediction Head array
+  - [[20, 23, 26, 29], 1, Detect, [nc]]        # 30 -> Predictor Array (P2, P3, P4, P5)

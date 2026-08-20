@@ -1,0 +1,7 @@
+# configs/data/nuaa_sirst.yaml
+path: ../../datasets/ISTD/NUAA-sirst
+train: images/train
+val:   images/test        # EFLNet's test split = the reported NUAA benchmark set
+test:  images/test
+nc: 1
+names: [target]
