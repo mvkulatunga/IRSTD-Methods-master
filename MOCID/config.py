@@ -22,8 +22,28 @@ class Config:
     STRIDES = [8, 16, 32]
     NUM_CLASSES = 1
 
-    train_path = "../../datasets/IRDST_mocid/train_IRDST.txt"
-    val_path = "../../datasets/IRDST_mocid/val_IRDST.txt"
+    # ---- dataset paths ---------------------------------------------------- #
+    # Override from the environment (Colab / CI). MOCID_DATASET selects a
+    # built-in split pair under MOCID_DATA_ROOT; MOCID_TRAIN_PATH /
+    # MOCID_VAL_PATH override the annotation files directly. Default is DAUB
+    # (the reproduction targets the DAUB ablation ladder first).
+    DATASET = os.environ.get("MOCID_DATASET", "DAUB").upper()
+    DATA_ROOT = os.environ.get("MOCID_DATA_ROOT", "../../datasets")
+
+    _SPLITS = {
+        "DAUB": ("DAUB_mocid/train_DAUB.txt", "DAUB_mocid/val_DAUB.txt"),
+        "IRDST": ("IRDST_mocid/train_IRDST.txt", "IRDST_mocid/val_IRDST.txt"),
+    }
+    assert DATASET in _SPLITS, (
+        f"MOCID_DATASET must be one of {list(_SPLITS)}, got {DATASET!r}"
+    )
+
+    train_path = os.environ.get(
+        "MOCID_TRAIN_PATH", os.path.join(DATA_ROOT, _SPLITS[DATASET][0])
+    )
+    val_path = os.environ.get(
+        "MOCID_VAL_PATH", os.path.join(DATA_ROOT, _SPLITS[DATASET][1])
+    )
 
 
 def get_device():
@@ -37,6 +57,4 @@ def setup_torch():
 
 
 # VMamba checkout that provides the selective-scan kernel used by dam.py
-VMAMBA_PATH = os.environ.get(
-    "VMAMBA_PATH", "/home/thor/Programming/IRSTD/methods/VMamba"
-)
+VMAMBA_PATH = os.environ.get("VMAMBA_PATH", "/content/VMamba")
