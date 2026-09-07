@@ -15,9 +15,19 @@ class MOCID(nn.Module):
     """Backbone -> DAM -> temporal pooling -> FPN -> YOLOX head."""
 
     def __init__(
-        self, num_classes=1, num_frames=5, img_size=512, base_channels=16, d_state=32
+        self,
+        num_classes=1,
+        num_frames=5,
+        img_size=512,
+        base_channels=16,
+        d_state=32,
+        debug_checks=False,
     ):
         super().__init__()
+        # opt-in: raises on a non-finite DAM output instead of letting it flow on.
+        # Off by default so a bad clip reaches the caller as a non-finite loss and
+        # the train loop can skip the step rather than die mid-run.
+        self.debug_checks = debug_checks
         ch = [base_channels * 8, base_channels * 16, base_channels * 32]
         self.backbone = SpatioTemporalBackbone(3, base_channels, num_frames, img_size)
         self.pool = TemporalPooling()
@@ -44,8 +54,10 @@ class MOCID(nn.Module):
             motion_features = feats_by_scale
 
         F_f = self.pool(motion_features)
-        for t in F_f:
-            assert torch.isfinite(t).all(), "non-finite in F_f (DAM output)"
+        if self.debug_checks:  # RuntimeError, not assert: survives python -O
+            for k, t in enumerate(F_f):
+                if not torch.isfinite(t).all():
+                    raise RuntimeError(f"non-finite in F_f[{k}] (DAM output)")
 
         outs = self.head(self.fpn(F_T, F_f))
 

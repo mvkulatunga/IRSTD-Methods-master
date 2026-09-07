@@ -70,6 +70,11 @@ class IOUloss(nn.Module):
             )
             alpha = v / torch.clamp((1.0 - iou + v), min=1e-6)
             loss = 1 - (ciou - alpha * v).clamp(min=-1.0, max=1.0)
+        else:  # otherwise `loss` is unbound and the error names the wrong thing
+            raise ValueError(
+                f"Unsupported loss_type: {self.loss_type!r} "
+                "(expected 'iou', 'giou' or 'ciou')"
+            )
 
         if self.reduction == "mean":
             loss = loss.mean()
@@ -111,7 +116,9 @@ class YOLOLoss(nn.Module):
         """(B,C,H,W) raw grid -> ((B,HW,C) pixel-space preds, (1,HW,2) cell grid)."""
         grid = self.grids[k]
         hsize, wsize = output.shape[-2:]
-        if grid.shape[2:4] != output.shape[2:4]:  # rebuild only on shape change
+        # grid is (1,H,W,2), so its H,W are dims 1:3. (Upstream YOLOX compares 2:4
+        # because its grid carries an extra anchor dim; ours does not.)
+        if grid.shape[1:3] != output.shape[2:4] or grid.device != output.device:
             yv, xv = torch.meshgrid(
                 [torch.arange(hsize), torch.arange(wsize)], indexing="ij"
             )
@@ -202,11 +209,12 @@ class YOLOLoss(nn.Module):
         reg_weight = 5.0
         loss = reg_weight * loss_iou + loss_obj + loss_cls
 
+        # detached: this is a diagnostic trace, not part of the graph
         self.last_parts = (
-            float(reg_weight * loss_iou / num_fg),
-            float(loss_obj / num_fg),
-            float(loss_cls / num_fg),
-            float(num_fg),
+            float(reg_weight * loss_iou.detach() / num_fg),
+            float(loss_obj.detach() / num_fg),
+            float(loss_cls.detach() / num_fg),
+            float(num_fg),  # already a Python number
         )
         return loss / num_fg
 
