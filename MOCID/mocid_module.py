@@ -1,3 +1,26 @@
+"""MOCID as a single self-contained file (no imports from components/ or utils/).
+
+Deviations from the original hand-written draft, all marked inline with `FIX:`
+or `ADDED:` so they are greppable:
+
+ADDED   CDC3D                  -- the draft referenced it but never defined it.
+ADDED   selective_scan_ref     -- vendored verbatim from
+        mamba_ssm/ops/selective_scan_interface.py. Note it is the *_ref* function,
+        not selective_scan_fn: the latter is a thin wrapper over the compiled
+        `selective_scan_cuda` extension and cannot be copied as source. _ref is
+        pure PyTorch, so nothing needs installing -- but it loops over L and is
+        far slower, so a compiled kernel is still wanted for real training.
+ADDED   einops import          -- selective_scan_ref needs rearrange/repeat.
+ADDED   registry hook          -- @register_module, guarded so the file still
+        imports standalone, plus the _init_layers/_init_weights shape and the
+        expand/theta/**kwargs constructor the harness config passes.
+
+FIX 1   YOLOLoss.get_output_and_grid -- grid cache never hit (compared the wrong dims).
+FIX 2   YOLOLoss.get_losses          -- last_parts held the autograd graph.
+FIX 3   MOCID.forward                -- unconditional assert killed recoverable NaNs.
+FIX 4   IOUloss.forward              -- unknown loss_type raised UnboundLocalError.
+"""
+
 import math
 from contextlib import nullcontext
 
@@ -6,34 +29,106 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
 
+try:  # registered with the detectors harness when it is on the path
+    from detectors.registry import register_module
+except ImportError:  # standalone use: this repo has no detectors package
+
+    def register_module(cls):
+        """No-op stand-in so the module imports without the harness."""
+        return cls
+
+
+@register_module
 class MOCID(nn.Module):
-    """Backbone -> DAM -> temporal pooling -> FPN -> YOLOX head."""
+    """
+    MOCID: motion-compensated infrared small target detector.
+
+    A CSPDarknet stem with FISTA-based spatio-temporal stages
+    (CSPDArknetFISTABackbone) extracts per-frame features from a clip; a
+    Displacement-Aware Mamba module (DAM) aligns reference frames to the target
+    frame, temporal max-pooling collapses the clip, and an FPN + YOLOX head
+    produce per-scale box/obj/cls predictions.
+
+    Every component is defined in this file rather than imported from
+    components/ and utils/, so the whole detector can be modified in one place.
+    Registered under the name "MOCID", so detectors.models.build_module can
+    construct it from a config dict; unknown config keys are absorbed by
+    **kwargs.
+
+    Arguments:
+    - num_classes (int): number of foreground classes.
+    - num_frames (int): number of frames T in each input clip (references + target).
+    - img_size (int): size of the input frames provided to the model (assumes a
+      square shape). Must be divisible by 64: the 1/32 stage feeds the DAM's
+      temporal-interpolation scan, which needs an even-sized feature map.
+    - base_channels (int): channel multiplier for the CSPDarknet stem/FISTA stages.
+    - d_state (int): SSM state dimension used by the DAM's selective scan.
+    - expand (int): channel expansion factor inside each DAM block.
+    - theta (float): central-difference weighting used by the DAM's 3D-CDC.
+    - debug_checks (bool): raise on a non-finite DAM output instead of letting it
+      flow on. Off by default so a bad clip reaches the caller as a non-finite
+      loss and the train loop can skip the step rather than die mid-run.
+    """
 
     def __init__(
         self,
-        num_classes=1,
-        num_frames=5,
-        img_size=512,
-        base_channels=16,
-        d_state=32,
-        debug_checks=False,
+        num_classes: int = 1,
+        num_frames: int = 5,
+        img_size: int = 512,
+        base_channels: int = 16,
+        d_state: int = 32,
+        expand: int = 1,
+        theta: float = 0.7,
+        debug_checks: bool = False,
+        **kwargs,
     ):
         super().__init__()
-        # opt-in: raises on a non-finite DAM output instead of letting it flow on.
-        # Off by default so a bad clip reaches the caller as a non-finite loss and
-        # the train loop can skip the step rather than die mid-run.
+        self.num_classes = num_classes
+        self.num_frames = num_frames
+        self.img_size = img_size
+        self.base_channels = base_channels
+        self.d_state = d_state
+        self.expand = expand
+        self.theta = theta
         self.debug_checks = debug_checks
-        ch = [base_channels * 8, base_channels * 16, base_channels * 32]
-        self.backbone = CSPDArknetFISTABackbone(3, base_channels, num_frames, img_size)
+
+        self._init_layers()
+        self._init_weights()
+
+    def _init_layers(self):
+        """
+        Initialise the backbone, DAM, temporal pooling, FPN, detection head and loss.
+        """
+        ch = [self.base_channels * 8, self.base_channels * 16, self.base_channels * 32]
+
+        self.backbone = CSPDArknetFISTABackbone(
+            3, self.base_channels, self.num_frames, self.img_size
+        )
         self.pool = TemporalPooling()
-        self.disp = DisplacementNet(ch, d_state=d_state, expand=1, theta=0.7)
+        self.disp = DisplacementNet(
+            ch, d_state=self.d_state, expand=self.expand, theta=self.theta
+        )
         self.fpn = FPN(ch)
-        # width=0.5 halves the doubled in_channels back to ch
-        self.head = YOLOXHead(num_classes, width=0.5, in_channels=[c * 2 for c in ch])
-        self.loss_fn = YOLOLoss(num_classes, fp16=False, strides=[8, 16, 32])
+        # width=0.5 halves the doubled in_channels (target + pooled motion) back to ch
+        self.head = YOLOXHead(
+            self.num_classes, width=0.5, in_channels=[c * 2 for c in ch]
+        )
+        self.loss_fn = YOLOLoss(self.num_classes, fp16=False, strides=[8, 16, 32])
+
+    def _init_weights(self):
+        """
+        No-op: DAMBlock, YOLOXHead and TIDS each set their own weights in __init__
+        (zero-init residual paths, YOLOX bias priors, log-spaced A_log for the Mamba
+        scan) and a blanket re-init here would overwrite and destabilise them.
+        """
+        pass
 
     def forward(self, clip, labels=None, use_dam=True):
-        """clip (B,T,3,H,W) -> raw head outputs, or the scalar loss when labels are given."""
+        """
+        Forward function to evaluate the MOCID output.
+
+        clip (B,T,3,H,W) -> raw head outputs, or the scalar loss when labels are given.
+        """
         Ft, Fr_list = self.backbone(clip)
 
         # rebuild per-scale (B,T,C,H,W) volumes with the target frame last
@@ -49,7 +144,11 @@ class MOCID(nn.Module):
             motion_features = feats_by_scale
 
         F_f = self.pool(motion_features)
-        if self.debug_checks:  # RuntimeError, not assert: survives python -O
+        # FIX 3: was an unconditional `assert torch.isfinite(t).all()`, which
+        # fired inside forward and killed the run before the training loop could
+        # skip a non-finite loss. Now opt-in, and a RuntimeError so behaviour does
+        # not change under python -O.
+        if self.debug_checks:
             for k, t in enumerate(F_f):
                 if not torch.isfinite(t).all():
                     raise RuntimeError(f"non-finite in F_f[{k}] (DAM output)")
@@ -431,6 +530,45 @@ class SDS(nn.Module):
         dt, Bp, Cp = torch.split(p, [self.d_inner, self.N, self.N], dim=1)
         return dt, Bp, Cp  # softplus applied in TIDS
 
+# --- selective-scan backend ------------------------------------------------- #
+# The fast scans are compiled CUDA extensions, so they CANNOT be vendored into this
+# file: mamba-ssm's selective_scan_fn is a thin autograd wrapper whose forward calls
+# the `selective_scan_cuda` extension (and raises if it was not built), and VMamba's
+# csms6s wraps its own. Whichever is importable is used for CUDA tensors; otherwise
+# we fall back to the pure-PyTorch selective_scan_ref below, which runs on CPU but
+# loops over L and is for verification, not training throughput.
+#
+# To get the fast path on a GPU box, either
+#   pip install mamba-ssm            (built with MAMBA_KEEP_CUDA_BUILD=TRUE)
+# or put a VMamba checkout on sys.path / PYTHONPATH so `classification.models.csms6s`
+# imports. Check which one is live with mocid_module.SELECTIVE_SCAN_BACKEND.
+def _load_cuda_scan():
+    """-> (fn(u, delta, A, B, C, D, delta_softplus) | None, backend name)."""
+    try:  # state-spaces/mamba; same signature as selective_scan_ref
+        from mamba_ssm.ops.selective_scan_interface import selective_scan_fn as _f
+
+        return (
+            lambda u, d, A, B, C, D, sp: _f(
+                u, d, A, B, C, D, z=None, delta_bias=None, delta_softplus=sp
+            ),
+            "mamba_ssm.selective_scan_fn (CUDA)",
+        )
+    except ImportError:
+        pass
+    try:  # VMamba csms6s; positional, no z, takes (oflex, backend)
+        from classification.models.csms6s import selective_scan_fn as _f
+
+        return (
+            lambda u, d, A, B, C, D, sp: _f(u, d, A, B, C, D, None, sp, True, None),
+            "csms6s.selective_scan_fn (VMamba, CUDA)",
+        )
+    except ImportError:
+        pass
+    return None, "selective_scan_ref (pure PyTorch)"
+
+
+SELECTIVE_SCAN_CUDA, SELECTIVE_SCAN_BACKEND = _load_cuda_scan()
+
 # Vendored from mamba_ssm/ops/selective_scan_interface.py (state-spaces/mamba,
 # Tri Dao & Albert Gu, Apache-2.0), verbatim. This is the pure-PyTorch reference
 # scan: no selective_scan_cuda extension, so it runs on CPU and MOCID carries no
@@ -542,7 +680,8 @@ class TIDS(nn.Module):
     # --- bidirectional selective scan on a 1-D interleaved sequence (csms6s K=2) --- #
     def _bidir_scan(self, seq, dt, Bp, Cp, A):
         """Scan a 1-D sequence forward (TL->BR) and reverse (BR->TL), merge by add.
-        Uses csms6s with K=2 groups so both directions run in ONE kernel launch.
+        Packs both directions as K=2 groups so one scan call covers them; the
+        compiled kernel is used on CUDA, selective_scan_ref otherwise.
 
         seq, dt : (B, D_inner, L)   Bp, Cp : (B, N, L)   A : (D_inner, N)
         returns : (B, D_inner, L)
@@ -558,9 +697,12 @@ class TIDS(nn.Module):
         D2 = torch.cat([self.D, self.D], dim=0)  # (2*D_inner,)
         B2 = torch.stack([Bp, Bp.flip(-1)], dim=1)  # (B, 2, N, L)
         C2 = torch.stack([Cp, Cp.flip(-1)], dim=1)  # (B, 2, N, L)
-        out = selective_scan_ref(
-            u, dl, A2, B2, C2, D2, z=None, delta_bias=None, delta_softplus=True
-        )  # (B, 2*D_inner, L)
+        if SELECTIVE_SCAN_CUDA is not None and u.is_cuda:
+            out = SELECTIVE_SCAN_CUDA(u, dl, A2, B2, C2, D2, True)
+        else:  # CPU, or no compiled kernel available
+            out = selective_scan_ref(
+                u, dl, A2, B2, C2, D2, z=None, delta_bias=None, delta_softplus=True
+            )  # (B, 2*D_inner, L)
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
         fwd, bwd = out[:, :Din], out[:, Din:]
         return fwd + bwd.flip(-1)  # merge the 2 directions
@@ -820,7 +962,8 @@ class IOUloss(nn.Module):
             )
             alpha = v / torch.clamp((1.0 - iou + v), min=1e-6)
             loss = 1 - (ciou - alpha * v).clamp(min=-1.0, max=1.0)
-        else:  # otherwise `loss` is unbound and the error names the wrong thing
+        else:  # FIX 4: without this, `loss` is unbound -> UnboundLocalError,
+            # which names the wrong thing and hides the real mistake
             raise ValueError(
                 f"Unsupported loss_type: {self.loss_type!r} "
                 "(expected 'iou', 'giou' or 'ciou')"
@@ -865,6 +1008,7 @@ class YOLOLoss(nn.Module):
         """(B,C,H,W) raw grid -> ((B,HW,C) pixel-space preds, (1,HW,2) cell grid)."""
         grid = self.grids[k]
         hsize, wsize = output.shape[-2:]
+        # FIX 1: the cache never hit, so the meshgrid was rebuilt every call.
         # grid is (1,H,W,2), so its H,W are dims 1:3. (Upstream YOLOX compares 2:4
         # because its grid carries an extra anchor dim; ours does not.)
         if grid.shape[1:3] != output.shape[2:4] or grid.device != output.device:
@@ -958,7 +1102,8 @@ class YOLOLoss(nn.Module):
         reg_weight = 5.0
         loss = reg_weight * loss_iou + loss_obj + loss_cls
 
-        # detached: this is a diagnostic trace, not part of the graph
+        # FIX 2: detach before float() -- these still held the autograd graph,
+        # which warns and keeps the diagnostic tied to the backward pass.
         self.last_parts = (
             float(reg_weight * loss_iou.detach() / num_fg),
             float(loss_obj.detach() / num_fg),
