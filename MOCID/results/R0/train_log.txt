@@ -1,0 +1,192 @@
+[train] artifacts -> runs/server-r0/
+Loaded 8942 clips of length 5 from /users/3/a1832453/mocid_min/daub_train_server.txt
+Loaded 4767 clips of length 5 from /users/3/a1832453/mocid_min/daub_val_server.txt
+========================= STAGE 1: FISTA =========================
+[server-r0-fista] 1/100  loss 5.9903  lr 3.33e-03
+[server-r0-fista] 2/100  loss 3.1683  lr 5.00e-03
+[server-r0-fista] eval @ ep2: AP50 84.71  F1 84.05
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 3/100  loss 2.9431  lr 6.67e-03
+[server-r0-fista] 4/100  loss 2.8553  lr 8.33e-03
+[server-r0-fista] eval @ ep4: AP50 88.29  F1 85.09
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 5/100  loss 2.8208  lr 1.00e-02
+[server-r0-fista] 6/100  loss 2.8630  lr 1.00e-02
+[server-r0-fista] eval @ ep6: AP50 82.59  F1 82.76
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 7/100  loss 2.7637  lr 1.00e-02
+[server-r0-fista] 8/100  loss 2.7428  lr 9.99e-03
+[server-r0-fista] eval @ ep8: AP50 79.68  F1 81.83
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 9/100  loss 2.6848  lr 9.98e-03
+[server-r0-fista] 10/100  loss 2.6932  lr 9.96e-03
+[server-r0-fista] eval @ ep10: AP50 70.16  F1 72.99
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 11/100  loss 2.6813  lr 9.93e-03
+[server-r0-fista] 12/100  loss 2.6555  lr 9.90e-03
+[server-r0-fista] eval @ ep12: AP50 40.49  F1 53.91
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 13/100  loss 2.6440  lr 9.87e-03
+[server-r0-fista] 14/100  loss 2.6671  lr 9.82e-03
+[server-r0-fista] eval @ ep14: AP50 5.22  F1 11.22
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 15/100  loss 2.6477  lr 9.78e-03
+[server-r0-fista] 16/100  loss 2.6337  lr 9.73e-03
+[server-r0-fista] eval @ ep16: AP50 1.83  F1 4.26
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 17/100  loss 2.6243  lr 9.67e-03
+[server-r0-fista] 18/100  loss 2.6097  lr 9.61e-03
+[server-r0-fista] eval @ ep18: AP50 0.70  F1 1.70
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 19/100  loss 2.5874  lr 9.54e-03
+[server-r0-fista] 20/100  loss 2.5731  lr 9.47e-03
+[server-r0-fista] eval @ ep20: AP50 0.68  F1 1.66
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 21/100  loss 2.5970  lr 9.39e-03
+[server-r0-fista] 22/100  loss 2.6055  lr 9.31e-03
+[server-r0-fista] eval @ ep22: AP50 1.43  F1 3.01
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 23/100  loss 2.5849  lr 9.22e-03
+[server-r0-fista] 24/100  loss 2.5399  lr 9.13e-03
+[server-r0-fista] eval @ ep24: AP50 4.74  F1 9.44
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 25/100  loss 2.5532  lr 9.04e-03
+[server-r0-fista] 26/100  loss 2.5295  lr 8.93e-03
+[server-r0-fista] eval @ ep26: AP50 17.41  F1 30.11
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 27/100  loss 2.5315  lr 8.83e-03
+[server-r0-fista] 28/100  loss 2.5013  lr 8.72e-03
+[server-r0-fista] eval @ ep28: AP50 36.24  F1 50.04
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 29/100  loss 2.4658  lr 8.61e-03
+[server-r0-fista] 30/100  loss 2.5050  lr 8.49e-03
+[server-r0-fista] eval @ ep30: AP50 52.95  F1 60.53
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 31/100  loss 2.5081  lr 8.37e-03
+[server-r0-fista] 32/100  loss 2.4398  lr 8.25e-03
+[server-r0-fista] eval @ ep32: AP50 60.43  F1 66.96
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 33/100  loss 2.4546  lr 8.12e-03
+[server-r0-fista] 34/100  loss 2.4454  lr 7.99e-03
+[server-r0-fista] eval @ ep34: AP50 65.37  F1 71.42
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 35/100  loss 2.4291  lr 7.85e-03
+[server-r0-fista] 36/100  loss 2.4190  lr 7.71e-03
+[server-r0-fista] eval @ ep36: AP50 68.61  F1 73.60
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 37/100  loss 2.3809  lr 7.57e-03
+[server-r0-fista] 38/100  loss 2.3890  lr 7.43e-03
+[server-r0-fista] eval @ ep38: AP50 69.95  F1 74.24
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 39/100  loss 2.3747  lr 7.28e-03
+[server-r0-fista] 40/100  loss 2.3681  lr 7.13e-03
+[server-r0-fista] eval @ ep40: AP50 71.41  F1 75.33
+[server-r0-fista] (best tracking starts after epoch 40)
+[server-r0-fista] 41/100  loss 2.3192  lr 6.98e-03
+[server-r0-fista] 42/100  loss 2.3226  lr 6.83e-03
+[server-r0-fista] eval @ ep42: AP50 73.25  F1 77.68
+[server-r0-fista] *** new best AP50 73.25 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 43/100  loss 2.3086  lr 6.67e-03
+[server-r0-fista] 44/100  loss 2.3178  lr 6.52e-03
+[server-r0-fista] eval @ ep44: AP50 75.85  F1 79.04
+[server-r0-fista] *** new best AP50 75.85 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 45/100  loss 2.2654  lr 6.36e-03
+[server-r0-fista] 46/100  loss 2.2468  lr 6.20e-03
+[server-r0-fista] eval @ ep46: AP50 76.81  F1 79.55
+[server-r0-fista] *** new best AP50 76.81 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 47/100  loss 2.2407  lr 6.04e-03
+[server-r0-fista] 48/100  loss 2.2284  lr 5.87e-03
+[server-r0-fista] eval @ ep48: AP50 76.96  F1 79.26
+[server-r0-fista] *** new best AP50 76.96 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 49/100  loss 2.1884  lr 5.71e-03
+[server-r0-fista] 50/100  loss 2.1633  lr 5.55e-03
+[server-r0-fista] eval @ ep50: AP50 78.43  F1 80.38
+[server-r0-fista] *** new best AP50 78.43 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 51/100  loss 2.1903  lr 5.38e-03
+[server-r0-fista] 52/100  loss 2.1097  lr 5.22e-03
+[server-r0-fista] eval @ ep52: AP50 80.79  F1 82.09
+[server-r0-fista] *** new best AP50 80.79 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 53/100  loss 2.1139  lr 5.05e-03
+[server-r0-fista] 54/100  loss 2.0977  lr 4.88e-03
+[server-r0-fista] eval @ ep54: AP50 82.41  F1 83.14
+[server-r0-fista] *** new best AP50 82.41 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 55/100  loss 2.0546  lr 4.72e-03
+[server-r0-fista] 56/100  loss 2.0279  lr 4.55e-03
+[server-r0-fista] eval @ ep56: AP50 82.38  F1 83.48
+[server-r0-fista] 57/100  loss 2.0009  lr 4.39e-03
+[server-r0-fista] 58/100  loss 2.0027  lr 4.23e-03
+[server-r0-fista] eval @ ep58: AP50 82.35  F1 83.73
+[server-r0-fista] 59/100  loss 1.9834  lr 4.06e-03
+[server-r0-fista] 60/100  loss 1.9465  lr 3.90e-03
+[server-r0-fista] eval @ ep60: AP50 82.63  F1 84.01
+[server-r0-fista] *** new best AP50 82.63 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 61/100  loss 1.9155  lr 3.74e-03
+[server-r0-fista] 62/100  loss 1.8741  lr 3.58e-03
+[server-r0-fista] eval @ ep62: AP50 83.02  F1 84.48
+[server-r0-fista] *** new best AP50 83.02 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 63/100  loss 1.8529  lr 3.43e-03
+[server-r0-fista] 64/100  loss 1.8074  lr 3.27e-03
+[server-r0-fista] eval @ ep64: AP50 82.11  F1 84.13
+[server-r0-fista] 65/100  loss 1.8042  lr 3.12e-03
+[server-r0-fista] 66/100  loss 1.7844  lr 2.97e-03
+[server-r0-fista] eval @ ep66: AP50 82.41  F1 84.61
+[server-r0-fista] 67/100  loss 1.7396  lr 2.82e-03
+[server-r0-fista] 68/100  loss 1.7341  lr 2.67e-03
+[server-r0-fista] eval @ ep68: AP50 82.08  F1 84.69
+[server-r0-fista] 69/100  loss 1.6961  lr 2.53e-03
+[server-r0-fista] 70/100  loss 1.6476  lr 2.39e-03
+[server-r0-fista] eval @ ep70: AP50 82.13  F1 84.78
+[server-r0-fista] 71/100  loss 1.6106  lr 2.25e-03
+[server-r0-fista] 72/100  loss 1.5838  lr 2.11e-03
+[server-r0-fista] eval @ ep72: AP50 80.76  F1 84.21
+[server-r0-fista] 73/100  loss 1.5693  lr 1.98e-03
+[server-r0-fista] 74/100  loss 1.5407  lr 1.85e-03
+[server-r0-fista] eval @ ep74: AP50 80.79  F1 84.36
+[server-r0-fista] 75/100  loss 1.4950  lr 1.73e-03
+[server-r0-fista] 76/100  loss 1.4756  lr 1.61e-03
+[server-r0-fista] eval @ ep76: AP50 80.88  F1 84.45
+[server-r0-fista] 77/100  loss 1.4481  lr 1.49e-03
+[server-r0-fista] 78/100  loss 1.4144  lr 1.38e-03
+[server-r0-fista] eval @ ep78: AP50 80.79  F1 84.54
+[server-r0-fista] 79/100  loss 1.3853  lr 1.27e-03
+[server-r0-fista] 80/100  loss 1.3568  lr 1.17e-03
+[server-r0-fista] eval @ ep80: AP50 81.23  F1 84.81
+[server-r0-fista] 81/100  loss 1.3265  lr 1.06e-03
+[server-r0-fista] 82/100  loss 1.2869  lr 9.69e-04
+[server-r0-fista] eval @ ep82: AP50 81.27  F1 84.99
+[server-r0-fista] 83/100  loss 1.2694  lr 8.78e-04
+[server-r0-fista] 84/100  loss 1.2373  lr 7.91e-04
+[server-r0-fista] eval @ ep84: AP50 80.91  F1 85.05
+[server-r0-fista] 85/100  loss 1.2096  lr 7.09e-04
+[server-r0-fista] 86/100  loss 1.1769  lr 6.32e-04
+[server-r0-fista] eval @ ep86: AP50 82.16  F1 85.60
+[server-r0-fista] 87/100  loss 1.1384  lr 5.60e-04
+[server-r0-fista] 88/100  loss 1.1109  lr 4.93e-04
+[server-r0-fista] eval @ ep88: AP50 82.91  F1 86.29
+[server-r0-fista] 89/100  loss 1.0952  lr 4.31e-04
+[server-r0-fista] 90/100  loss 1.0692  lr 3.74e-04
+[server-r0-fista] eval @ ep90: AP50 84.03  F1 87.15
+[server-r0-fista] *** new best AP50 84.03 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 91/100  loss 1.0454  lr 3.22e-04
+[server-r0-fista] 92/100  loss 1.0191  lr 2.76e-04
+[server-r0-fista] eval @ ep92: AP50 84.62  F1 87.88
+[server-r0-fista] *** new best AP50 84.62 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 93/100  loss 0.9964  lr 2.35e-04
+[server-r0-fista] 94/100  loss 0.9610  lr 1.99e-04
+[server-r0-fista] eval @ ep94: AP50 85.83  F1 88.75
+[server-r0-fista] *** new best AP50 85.83 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 95/100  loss 0.9536  lr 1.69e-04
+[server-r0-fista] 96/100  loss 0.9296  lr 1.44e-04
+[server-r0-fista] eval @ ep96: AP50 86.81  F1 89.40
+[server-r0-fista] *** new best AP50 86.81 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 97/100  loss 0.9137  lr 1.25e-04
+[server-r0-fista] 98/100  loss 0.9123  lr 1.11e-04
+[server-r0-fista] eval @ ep98: AP50 87.87  F1 89.71
+[server-r0-fista] *** new best AP50 87.87 -> runs/server-r0/fista_best.pth
+[server-r0-fista] 99/100  loss 0.8982  lr 1.03e-04
+[server-r0-fista] 100/100  loss 0.8815  lr 1.00e-04
+[server-r0-fista] eval @ ep100: AP50 88.65  F1 90.05
+[server-r0-fista] *** new best AP50 88.65 -> runs/server-r0/fista_best.pth
+[server-r0-fista] saved stage checkpoint -> runs/server-r0/fista.pth
+========================= STAGE 2: DAM =========================
+[stage2] seeded from FISTA best: runs/server-r0/fista_best.pth  (disp.* kept at zero-init; 0 non-matching keys skipped)
