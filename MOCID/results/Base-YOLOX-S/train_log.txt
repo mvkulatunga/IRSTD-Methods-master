@@ -1,0 +1,198 @@
+[base] params 8.94 M (paper Base 8.94 M)
+[base] artifacts -> /home/a1832453/mocid_checks/runs/base-yoloxs/
+Loaded 8942 clips of length 5 from /home/a1832453/mocid_min/daub_train_server.txt
+Loaded 4767 clips of length 5 from /home/a1832453/mocid_min/daub_val_server.txt
+[base-yoloxs] 1/100  loss 4.7980  lr 3.33e-03
+[base-yoloxs] 2/100  loss 2.9989  lr 5.00e-03
+[base-yoloxs] eval @ ep2: AP50 65.51  F1 71.11
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 3/100  loss 2.8463  lr 6.67e-03
+[base-yoloxs] 4/100  loss 2.7585  lr 8.33e-03
+[base-yoloxs] eval @ ep4: AP50 75.65  F1 78.80
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 5/100  loss 2.7398  lr 1.00e-02
+[base-yoloxs] 6/100  loss 2.7440  lr 1.00e-02
+[base-yoloxs] eval @ ep6: AP50 82.08  F1 81.05
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 7/100  loss 2.6916  lr 1.00e-02
+[base-yoloxs] 8/100  loss 2.6312  lr 9.99e-03
+[base-yoloxs] eval @ ep8: AP50 82.35  F1 83.32
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 9/100  loss 2.6250  lr 9.98e-03
+[base-yoloxs] 10/100  loss 2.6406  lr 9.96e-03
+[base-yoloxs] eval @ ep10: AP50 79.58  F1 80.19
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 11/100  loss 2.6358  lr 9.93e-03
+[base-yoloxs] 12/100  loss 2.6317  lr 9.90e-03
+[base-yoloxs] eval @ ep12: AP50 77.46  F1 76.69
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 13/100  loss 2.6074  lr 9.87e-03
+[base-yoloxs] 14/100  loss 2.6193  lr 9.82e-03
+[base-yoloxs] eval @ ep14: AP50 74.63  F1 74.04
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 15/100  loss 2.5994  lr 9.78e-03
+[base-yoloxs] 16/100  loss 2.5942  lr 9.73e-03
+[base-yoloxs] eval @ ep16: AP50 67.07  F1 64.35
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 17/100  loss 2.5896  lr 9.67e-03
+[base-yoloxs] 18/100  loss 2.5499  lr 9.61e-03
+[base-yoloxs] eval @ ep18: AP50 56.54  F1 55.68
+[base-yoloxs] (best tracking starts after epoch 40)
+[base] params 8.94 M (paper Base 8.94 M)
+[base] artifacts -> /home/a1832453/mocid_checks/runs/base-yoloxs/
+Loaded 8942 clips of length 5 from /users/3/a1832453/mocid_min/daub_train_server.txt
+Loaded 4767 clips of length 5 from /users/3/a1832453/mocid_min/daub_val_server.txt
+[resume] loaded /home/a1832453/mocid_checks/runs/base-yoloxs/base_last.pth  -> resume at epoch 15
+[base] artifacts -> /home/a1832453/mocid_checks/runs/base-yoloxs/
+Loaded 8942 clips of length 5 from /users/3/a1832453/mocid_min/daub_train_server.txt
+Loaded 4767 clips of length 5 from /users/3/a1832453/mocid_min/daub_val_server.txt
+[base-yoloxs] 16/100  loss 2.5712  lr 9.73e-03
+[base-yoloxs] eval @ ep16: AP50 75.09  F1 78.78
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 17/100  loss 2.5782  lr 9.67e-03
+[base-yoloxs] 18/100  loss 2.5689  lr 9.61e-03
+[base-yoloxs] eval @ ep18: AP50 74.52  F1 79.11
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 19/100  loss 2.5918  lr 9.54e-03
+[base-yoloxs] 20/100  loss 2.5668  lr 9.47e-03
+[base-yoloxs] eval @ ep20: AP50 76.55  F1 79.35
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 21/100  loss 2.5355  lr 9.39e-03
+[base-yoloxs] 22/100  loss 2.5709  lr 9.31e-03
+[base-yoloxs] eval @ ep22: AP50 78.05  F1 81.22
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 23/100  loss 2.5312  lr 9.22e-03
+[base-yoloxs] 24/100  loss 2.5505  lr 9.13e-03
+[base-yoloxs] eval @ ep24: AP50 77.30  F1 81.09
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 25/100  loss 2.5221  lr 9.04e-03
+[base-yoloxs] 26/100  loss 2.4948  lr 8.93e-03
+[base-yoloxs] eval @ ep26: AP50 76.63  F1 80.72
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 27/100  loss 2.4880  lr 8.83e-03
+[base-yoloxs] 28/100  loss 2.4854  lr 8.72e-03
+[base-yoloxs] eval @ ep28: AP50 75.53  F1 79.80
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 29/100  loss 2.4807  lr 8.61e-03
+[base-yoloxs] 30/100  loss 2.4669  lr 8.49e-03
+[base-yoloxs] eval @ ep30: AP50 75.79  F1 79.34
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 31/100  loss 2.4445  lr 8.37e-03
+[base-yoloxs] 32/100  loss 2.4261  lr 8.25e-03
+[base-yoloxs] eval @ ep32: AP50 74.91  F1 78.54
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 33/100  loss 2.4375  lr 8.12e-03
+[base-yoloxs] 34/100  loss 2.4046  lr 7.99e-03
+[base-yoloxs] eval @ ep34: AP50 73.34  F1 77.81
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 35/100  loss 2.3662  lr 7.85e-03
+[base-yoloxs] 36/100  loss 2.3888  lr 7.71e-03
+[base-yoloxs] eval @ ep36: AP50 72.94  F1 77.31
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 37/100  loss 2.3627  lr 7.57e-03
+[base-yoloxs] 38/100  loss 2.3539  lr 7.43e-03
+[base-yoloxs] eval @ ep38: AP50 72.62  F1 76.81
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 39/100  loss 2.3387  lr 7.28e-03
+[base-yoloxs] 40/100  loss 2.3133  lr 7.13e-03
+[base-yoloxs] eval @ ep40: AP50 73.46  F1 77.54
+[base-yoloxs] (best tracking starts after epoch 40)
+[base-yoloxs] 41/100  loss 2.3175  lr 6.98e-03
+[base-yoloxs] 42/100  loss 2.2903  lr 6.83e-03
+[base-yoloxs] eval @ ep42: AP50 73.82  F1 78.20
+[base-yoloxs] *** new best AP50 73.82 -> /home/a1832453/mocid_checks/runs/base-yoloxs/base_best.pth
+[base-yoloxs] 43/100  loss 2.2916  lr 6.67e-03
+[base-yoloxs] 44/100  loss 2.2820  lr 6.52e-03
+[base-yoloxs] eval @ ep44: AP50 73.40  F1 78.28
+[base-yoloxs] 45/100  loss 2.2729  lr 6.36e-03
+[base-yoloxs] 46/100  loss 2.2520  lr 6.20e-03
+[base-yoloxs] eval @ ep46: AP50 74.62  F1 79.09
+[base-yoloxs] *** new best AP50 74.62 -> /home/a1832453/mocid_checks/runs/base-yoloxs/base_best.pth
+[base-yoloxs] 47/100  loss 2.2332  lr 6.04e-03
+[base-yoloxs] 48/100  loss 2.2272  lr 5.87e-03
+[base-yoloxs] eval @ ep48: AP50 74.61  F1 79.56
+[base-yoloxs] 49/100  loss 2.2057  lr 5.71e-03
+[base-yoloxs] 50/100  loss 2.1995  lr 5.55e-03
+[base-yoloxs] eval @ ep50: AP50 74.31  F1 80.15
+[base-yoloxs] 51/100  loss 2.1652  lr 5.38e-03
+[base-yoloxs] 52/100  loss 2.1556  lr 5.22e-03
+[base-yoloxs] eval @ ep52: AP50 74.02  F1 80.54
+[base-yoloxs] 53/100  loss 2.1255  lr 5.05e-03
+[base-yoloxs] 54/100  loss 2.1071  lr 4.88e-03
+[base-yoloxs] eval @ ep54: AP50 73.85  F1 80.86
+[base-yoloxs] 55/100  loss 2.0927  lr 4.72e-03
+[base-yoloxs] 56/100  loss 2.0636  lr 4.55e-03
+[base-yoloxs] eval @ ep56: AP50 74.08  F1 81.09
+[base-yoloxs] 57/100  loss 2.0414  lr 4.39e-03
+[base-yoloxs] 58/100  loss 1.9983  lr 4.23e-03
+[base-yoloxs] eval @ ep58: AP50 73.52  F1 80.32
+[base-yoloxs] 59/100  loss 2.0018  lr 4.06e-03
+[base-yoloxs] 60/100  loss 1.9703  lr 3.90e-03
+[base-yoloxs] eval @ ep60: AP50 73.45  F1 80.49
+[base-yoloxs] 61/100  loss 1.9547  lr 3.74e-03
+[base-yoloxs] 62/100  loss 1.9348  lr 3.58e-03
+[base-yoloxs] eval @ ep62: AP50 74.84  F1 81.12
+[base-yoloxs] *** new best AP50 74.84 -> /home/a1832453/mocid_checks/runs/base-yoloxs/base_best.pth
+[base-yoloxs] 63/100  loss 1.8997  lr 3.43e-03
+[base-yoloxs] 64/100  loss 1.8731  lr 3.27e-03
+[base-yoloxs] eval @ ep64: AP50 74.91  F1 81.08
+[base-yoloxs] *** new best AP50 74.91 -> /home/a1832453/mocid_checks/runs/base-yoloxs/base_best.pth
+[base-yoloxs] 65/100  loss 1.8476  lr 3.12e-03
+[base-yoloxs] 66/100  loss 1.8147  lr 2.97e-03
+[base-yoloxs] eval @ ep66: AP50 73.48  F1 80.61
+[base-yoloxs] 67/100  loss 1.7858  lr 2.82e-03
+[base-yoloxs] 68/100  loss 1.7775  lr 2.67e-03
+[base-yoloxs] eval @ ep68: AP50 72.41  F1 80.46
+[base-yoloxs] 69/100  loss 1.7230  lr 2.53e-03
+[base-yoloxs] 70/100  loss 1.6931  lr 2.39e-03
+[base-yoloxs] eval @ ep70: AP50 72.80  F1 80.89
+[base-yoloxs] 71/100  loss 1.6625  lr 2.25e-03
+[base-yoloxs] 72/100  loss 1.6352  lr 2.11e-03
+[base-yoloxs] eval @ ep72: AP50 73.05  F1 80.99
+[base-yoloxs] 73/100  loss 1.6043  lr 1.98e-03
+[base-yoloxs] 74/100  loss 1.5866  lr 1.85e-03
+[base-yoloxs] eval @ ep74: AP50 72.89  F1 81.01
+[base-yoloxs] 75/100  loss 1.5485  lr 1.73e-03
+[base-yoloxs] 76/100  loss 1.4956  lr 1.61e-03
+[base-yoloxs] eval @ ep76: AP50 73.28  F1 81.03
+[base-yoloxs] 77/100  loss 1.4751  lr 1.49e-03
+[base-yoloxs] 78/100  loss 1.4418  lr 1.38e-03
+[base-yoloxs] eval @ ep78: AP50 73.55  F1 81.32
+[base-yoloxs] 79/100  loss 1.4105  lr 1.27e-03
+[base-yoloxs] 80/100  loss 1.3878  lr 1.17e-03
+[base-yoloxs] eval @ ep80: AP50 74.18  F1 81.36
+[base-yoloxs] 81/100  loss 1.3522  lr 1.06e-03
+[base-yoloxs] 82/100  loss 1.3174  lr 9.69e-04
+[base-yoloxs] eval @ ep82: AP50 74.07  F1 81.13
+[base-yoloxs] 83/100  loss 1.2850  lr 8.78e-04
+[base-yoloxs] 84/100  loss 1.2566  lr 7.91e-04
+[base-yoloxs] eval @ ep84: AP50 73.85  F1 80.79
+[base-yoloxs] 85/100  loss 1.2272  lr 7.09e-04
+[base-yoloxs] 86/100  loss 1.2025  lr 6.32e-04
+[base-yoloxs] eval @ ep86: AP50 73.80  F1 80.78
+[base-yoloxs] 87/100  loss 1.1643  lr 5.60e-04
+[base-yoloxs] 88/100  loss 1.1272  lr 4.93e-04
+[base-yoloxs] eval @ ep88: AP50 73.98  F1 81.39
+[base-yoloxs] 89/100  loss 1.0981  lr 4.31e-04
+[base-yoloxs] 90/100  loss 1.0647  lr 3.74e-04
+[base-yoloxs] eval @ ep90: AP50 74.15  F1 81.34
+[base-yoloxs] 91/100  loss 1.0307  lr 3.22e-04
+[base-yoloxs] 92/100  loss 1.0149  lr 2.76e-04
+[base-yoloxs] eval @ ep92: AP50 74.86  F1 81.43
+[base-yoloxs] 93/100  loss 0.9924  lr 2.35e-04
+[base-yoloxs] 94/100  loss 0.9586  lr 1.99e-04
+[base-yoloxs] eval @ ep94: AP50 74.94  F1 81.71
+[base-yoloxs] *** new best AP50 74.94 -> /home/a1832453/mocid_checks/runs/base-yoloxs/base_best.pth
+[base-yoloxs] 95/100  loss 0.9370  lr 1.69e-04
+[base-yoloxs] 96/100  loss 0.9187  lr 1.44e-04
+[base-yoloxs] eval @ ep96: AP50 74.99  F1 81.86
+[base-yoloxs] *** new best AP50 74.99 -> /home/a1832453/mocid_checks/runs/base-yoloxs/base_best.pth
+[base-yoloxs] 97/100  loss 0.8915  lr 1.25e-04
+[base-yoloxs] 98/100  loss 0.8946  lr 1.11e-04
+[base-yoloxs] eval @ ep98: AP50 75.70  F1 82.36
+[base-yoloxs] *** new best AP50 75.70 -> /home/a1832453/mocid_checks/runs/base-yoloxs/base_best.pth
+[base-yoloxs] 99/100  loss 0.8716  lr 1.03e-04
+[base-yoloxs] 100/100  loss 0.8776  lr 1.00e-04
+[base-yoloxs] eval @ ep100: AP50 75.93  F1 82.38
+[base-yoloxs] *** new best AP50 75.93 -> /home/a1832453/mocid_checks/runs/base-yoloxs/base_best.pth
+[base-yoloxs] saved stage checkpoint -> /home/a1832453/mocid_checks/runs/base-yoloxs/base.pth

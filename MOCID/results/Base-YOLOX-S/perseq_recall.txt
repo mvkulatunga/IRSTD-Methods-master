@@ -1,0 +1,10 @@
+base | mocid_checks/runs/base-yoloxs/base_best.pth ['model'] | epoch 98
+seq     frames  recall%  0-det frames  median top score
+data6      395    92.91            26             0.896
+data11     741    95.82            29             0.893
+data12    1496   100.00             0             0.941
+data15     747    29.59           463             0.000
+data18     496    83.47            74             0.887
+data20     396    86.62            45             0.901
+data21     496    19.96           134             0.021
+ALL       4767    76.57
