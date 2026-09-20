@@ -126,15 +126,28 @@ def load_external_pretrained(model, ckpt_path):
 
 
 def build_optimizer(model, cfg, epochs, lr=None):
-    """-> (SGD+Nesterov over trainable params, LambdaLR with warmup + cosine decay)."""
+    """-> (SGD+Nesterov over trainable params, LambdaLR with warmup + cosine decay).
+
+    Weight decay excludes BatchNorm scale/bias and every bias term (any 1-D
+    parameter) -- matches official YOLOX's own optimizer setup. Decaying those
+    tends to hurt rather than help; previously this applied uniform decay to
+    every parameter.
+    """
     lr = cfg.LR_INIT if lr is None else lr
-    params = [p for p in model.parameters() if p.requires_grad]  # skips frozen stages
+
+    decay, no_decay = [], []
+    for p in model.parameters():
+        if not p.requires_grad:  # skips frozen stages
+            continue
+        (no_decay if p.ndim <= 1 else decay).append(p)
 
     opt = torch.optim.SGD(
-        params,
+        [
+            {"params": decay, "weight_decay": cfg.WEIGHT_DECAY},
+            {"params": no_decay, "weight_decay": 0.0},
+        ],
         lr=lr,
         momentum=cfg.MOMENTUM,
-        weight_decay=cfg.WEIGHT_DECAY,
         nesterov=True,
     )
 
