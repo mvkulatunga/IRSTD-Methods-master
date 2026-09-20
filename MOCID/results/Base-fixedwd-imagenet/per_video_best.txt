@@ -1,0 +1,10 @@
+runs/base-sstnet/best_ap50.pth | epoch 51
+seq     frames  recall%  0-det    AP50  median top score
+data6      399    90.98      3   88.14             0.886
+data11     745    95.03      3   94.26             0.875
+data12    1500   100.00      0  100.00             0.896
+data15     751    90.68      5   62.40             0.862
+data18     500    97.60     12   95.22             0.855
+data20     400    93.50      3   92.30             0.888
+data21     500    69.60      1   49.97             0.540
+ALL       4795    93.06     27   88.83
