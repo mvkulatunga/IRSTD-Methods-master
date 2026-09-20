@@ -22,21 +22,31 @@ base commit. Copy `runs/<tag>/eval_log.csv` numbers into the AP50 / F1 columns.
 | Base | 2026-09-17 | cc31326 | DAUB | 1× L40S (pl-lawr7615) | official YOLOX-S code + this repo's `YOLOXHead`/`YOLOLoss`, no FISTA/DAM — PLAN §2 Tier-1 check | VOC: 75.93/82.38 · paper-style (pycocotools COCOeval, IoU 0.5, SSTNet's Pr/Re convention): AP50 76.95, Pr 98.83, Re 78.37, F1 87.42 | n/a | 8.94 M (matches) | ~$0 (own server) | **`Base` ≠ 83.59 → the shared recipe has a real problem independent of FISTA/DAM; the "assume baseline is clean" working assumption doesn't hold.** VOC vs. paper-style COCO differ by only ~1 pt (75.93 vs 76.95) — **confirms eval methodology is not the explanation for any gap seen so far.** Gap is recall: 78.4% vs 89.3%, concentrated on 2/7 val videos (data15 29.6%, data21 20.0%; data15 was **94.7%** after epoch 1 — lost during training, same collapse-then-partial-recover shape as `R0`'s FISTA run, just milder). Prime suspect, per `results/Base-YOLOX-S/README.md`: recipe deviations from SSTNet (which the paper follows) — **LR 0.01 unscaled for batch 4 vs. SSTNet's batch-linear-scaled 6.25e-4 (16× higher here)**, training from random init vs. SSTNet's `pre_trained.pth`, SSTNet using 1/5 of the data per epoch, no augmentation, fp32/no-AMP/no-clip vs. our AMP+clip. A from-scratch rerun matching SSTNet's recipe is in progress. |
 | Base-pretrained | 2026-09-20 | afb81a6 | DAUB | 1× L40S (pl-lawr7615) | recipe-fixed LR (6.25e-4) + `TRACK_BEST_AFTER=0` + COCO-pretrained YOLOX-S init (456/462 tensors) — **but raw 0-255/pad-114 input, not this repo's ImageNet normalisation**; fp32, no grad clip; eval every epoch, all 4,795 frames | best: **89.82/95.23 @ ep5** (already past paper's 83.59/91.74 by ep2) → decays to 72.10/84.43 @ ep100 | n/a | 8.94 M | ~$0 (own server, 3.0 h) | **The LR+init fix is confirmed correct for getting to a good state fast — but the mid/late-training decay persists even with proper LR and a strong pretrained start**, concentrated on the same two videos again: data15 92.0%→17.4% (443 zero-det frames by ep100), data21 76.8%→34.4%. Precision keeps climbing (95.96→98.67) while recall falls (94.52→73.79) as training loss keeps falling and val loss rises — the classic overfitting/generalisation-gap shape, not a raw instability, since 5/7 videos stay healthy throughout. **Confound, not yet isolated:** README also references an off-repo from-scratch run using this repo's ImageNet normalisation that did *not* decay (held ~88 AP50 through ep51 and ep100, data15 at 90.7%) — so normalisation and init both differ between the stable and decaying runs; can't yet attribute the decay to either alone. **Do not revert `utils/data.py`'s ImageNet normalisation** on the strength of this run — if anything the evidence currently favours keeping it. Next isolating test: pretrained init **with** ImageNet normalisation (not raw-pixel), holding everything else fixed. See `results/Base-pretrained/README.md`. |
 
+| Base-fixedwd-imagenet | 2026-09-20 | afb81a6 | DAUB | 1× L40S (pl-lawr7615) | from-scratch, SSTNet recipe, weight decay excludes BatchNorm/bias (now matches `build_optimizer`) + ÷255 then ImageNet normalisation (matches `utils/data.py`) — **LR left at the original 0.01, deliberately, to test it** | best **88.83/94.44 @ ep51**, holds ~88.6 from ep40, final 87.99/94.08 @ ep100 | n/a | 8.94 M | ~$0 (own server, 1.2 h) | **Definitive isolating ablation — supersedes the LR-scaling narrative below.** Single-variable ablations from the original collapsing config (14 ep each): control collapses to 28.94 (peak 77.74 @ ep4); excluding BN/bias from decay alone → 73.35 (no collapse); adding ImageNet normalisation on top → 85.80 (peak 88.06). **Then, with decay-scope fixed: LR 0.01 (unscaled — the supposed "16× too high" value) reached 89.93 by ep10, and full-size epochs reached 88.91 by ep2 — both explicitly ruled out as causes.** Mechanism, from checkpoint inspection: in the collapsed run BatchNorm γ fell 1.000→0.231 and the deliberately-engineered low-prior objectness bias (~-4.6 at init, `YOLOXHead.initialize_biases`) drifted to +0.610 — weight decay pulls *every* decayed parameter toward 0, including BN scale/bias terms where 0 is not a sensible target. **SGD momentum (0.937) amplifies weight decay's effective strength by ~1/(1-m) ≈ 16×** — a nominal 5e-4 behaves like ~8e-3 on the parameters wrongly left in scope. data15/data21 recall at the healthy checkpoint: 90.7% / 69.6% (vs. 29.6%/20.0% for the original collapsed Base). See `results/Base-fixedwd-imagenet/README.md`.
+
+**Correction to every "LR is the prime suspect" note above (R0, R0-colab-a1, Base,
+Base-pretrained, and the "Recipe fix" section):** that was the wrong primary
+explanation. LR just happened to be changed alongside the real fix (weight-decay
+scope) and looked responsible. It is not load-bearing — 0.01 unscaled works fine
+once weight decay correctly excludes BatchNorm/bias. The batch-scaled LR (6.25e-4)
+is still a reasonable thing to match for fidelity to SSTNet's recipe, but it is not
+why any of the earlier collapses happened.
+
 ## Recipe fix, part 2 (2026-09-20) — weight decay
 
-Landed in response to `Base-pretrained`'s README, which also ran with weight decay
-excluding BatchNorm scale/bias and all bias terms (matches official YOLOX's own
-optimizer setup) — uncontested regardless of the normalisation confound above:
+Landed alongside (and independently confirmed by) `Base-fixedwd-imagenet` above,
+which is now the definitive account of the root cause:
 
 - `utils/utils.py`: `build_optimizer` now splits parameters into two SGD groups —
   every 1-D parameter (BatchNorm weight/bias, conv/linear biases) gets
   `weight_decay=0`; everything else keeps `cfg.WEIGHT_DECAY`. Previously decay
-  applied uniformly to every parameter.
+  applied uniformly to every parameter. **This was the primary fix** (28.94 → 73.35
+  AP50 @ ep14 in the isolating ablation).
 
-**Explicitly not changed:** `utils/data.py`'s ImageNet normalisation stays as-is
-(see the confound noted in `Base-pretrained` above) — do not "correct" it to
-raw-pixel without a controlled test showing that's actually the fix, since the
-one data point we have suggests the opposite.
+**Confirmed correct, not reverted:** `utils/data.py`'s ImageNet normalisation.
+`Base-fixedwd-imagenet`'s ablation shows it's the secondary fix on top of the
+weight-decay scope (73.35 → 85.80 @ ep14) — raw-pixel input was never the right
+call for this repo's own training path.
 
 ## Recipe fix (2026-09-20) — applied ahead of the next Base / R0 rerun
 
