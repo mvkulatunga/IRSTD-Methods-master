@@ -1,0 +1,105 @@
+[sst] pretrained /users/3/a1832453/yolox_s.pth: loaded 456 tensors, skipped 6 (expected: the 80-class predictors) e.g. ['head.cls_preds.0.weight', 'head.cls_preds.0.bias', 'head.cls_preds.1.weight']
+[sst] params 8.94 M | optimizer covers 8.94 M | group0: 0.01 M wd=0, group1: 8.91 M wd=0.0005, group2: 0.01 M wd=0
+[sst] repo-setting switches: flip=True norm=yolox amp=False clip=0.0 wd_all=False
+[sst] train 8982 frames, 2245 steps/epoch (1/1 of 2245); val 4795 frames
+[sst] LR by epoch: ep0=6.25e-05  ep1=0.000125  ep2=0.000313  ep3=0.000625  ep4=0.000625  ep50=0.000305  ep94=6.43e-06  ep95=6.25e-06  ep99=6.25e-06
+[sst] ep1/100 lr 6.25e-05 loss 2.633 val_loss 4.877 | COCO AP50 80.38 Pr 92.69 Re 87.45 F1 89.99 | VOC AP50 80.65 | 1.8 min | best AP50, best val-loss
+[sst] ep2/100 lr 1.25e-04 loss 2.308 val_loss 4.229 | COCO AP50 84.82 Pr 92.68 Re 92.49 F1 92.59 | VOC AP50 85.14 | 1.8 min | best AP50, best val-loss
+[sst] ep3/100 lr 3.13e-04 loss 2.442 val_loss 4.590 | COCO AP50 82.24 Pr 93.81 Re 88.74 F1 91.20 | VOC AP50 82.67 | 1.8 min 
+[sst] ep4/100 lr 6.25e-04 loss 2.447 val_loss 3.844 | COCO AP50 86.60 Pr 94.69 Re 92.55 F1 93.61 | VOC AP50 87.00 | 1.8 min | best AP50, best val-loss
+[sst] ep5/100 lr 6.25e-04 loss 2.176 val_loss 3.496 | COCO AP50 89.82 Pr 95.96 Re 94.52 F1 95.23 | VOC AP50 90.22 | 1.8 min | best AP50, best val-loss
+[sst] ep6/100 lr 6.24e-04 loss 2.003 val_loss 3.838 | COCO AP50 87.28 Pr 96.31 Re 91.07 F1 93.62 | VOC AP50 87.43 | 1.8 min 
+[sst] ep7/100 lr 6.23e-04 loss 1.880 val_loss 4.364 | COCO AP50 83.29 Pr 97.17 Re 86.78 F1 91.68 | VOC AP50 83.76 | 1.8 min 
+[sst] ep8/100 lr 6.22e-04 loss 1.824 val_loss 4.070 | COCO AP50 85.37 Pr 96.29 Re 89.59 F1 92.82 | VOC AP50 85.75 | 1.8 min 
+[sst] ep9/100 lr 6.21e-04 loss 1.702 val_loss 4.006 | COCO AP50 84.91 Pr 95.77 Re 89.64 F1 92.60 | VOC AP50 85.33 | 1.8 min 
+[sst] ep10/100 lr 6.19e-04 loss 1.645 val_loss 4.016 | COCO AP50 84.42 Pr 95.26 Re 89.24 F1 92.15 | VOC AP50 84.62 | 1.8 min 
+[sst] ep11/100 lr 6.16e-04 loss 1.603 val_loss 4.016 | COCO AP50 83.74 Pr 95.56 Re 88.65 F1 91.98 | VOC AP50 84.15 | 1.8 min 
+[sst] ep12/100 lr 6.14e-04 loss 1.529 val_loss 4.013 | COCO AP50 83.84 Pr 95.67 Re 88.24 F1 91.80 | VOC AP50 84.07 | 1.8 min 
+[sst] ep13/100 lr 6.11e-04 loss 1.502 val_loss 4.127 | COCO AP50 82.88 Pr 95.62 Re 87.42 F1 91.34 | VOC AP50 83.16 | 1.8 min 
+[sst] ep14/100 lr 6.07e-04 loss 1.470 val_loss 4.212 | COCO AP50 82.47 Pr 95.15 Re 87.01 F1 90.90 | VOC AP50 82.56 | 1.8 min 
+[sst] ep15/100 lr 6.03e-04 loss 1.431 val_loss 4.195 | COCO AP50 81.88 Pr 95.53 Re 86.92 F1 91.02 | VOC AP50 82.43 | 1.8 min 
+[sst] ep16/100 lr 5.99e-04 loss 1.394 val_loss 4.264 | COCO AP50 82.68 Pr 96.44 Re 86.53 F1 91.21 | VOC AP50 83.01 | 1.8 min 
+[sst] ep17/100 lr 5.95e-04 loss 1.382 val_loss 4.425 | COCO AP50 81.78 Pr 96.52 Re 85.42 F1 90.63 | VOC AP50 82.06 | 1.8 min 
+[sst] ep18/100 lr 5.90e-04 loss 1.344 val_loss 4.704 | COCO AP50 79.91 Pr 96.55 Re 83.55 F1 89.58 | VOC AP50 80.22 | 1.8 min 
+[sst] ep19/100 lr 5.85e-04 loss 1.364 val_loss 4.958 | COCO AP50 78.18 Pr 96.78 Re 81.81 F1 88.67 | VOC AP50 78.63 | 1.8 min 
+[sst] ep20/100 lr 5.80e-04 loss 1.326 val_loss 4.976 | COCO AP50 78.20 Pr 96.80 Re 81.50 F1 88.50 | VOC AP50 78.48 | 1.8 min 
+[sst] ep21/100 lr 5.74e-04 loss 1.325 val_loss 4.704 | COCO AP50 80.03 Pr 96.69 Re 83.13 F1 89.40 | VOC AP50 80.12 | 1.8 min 
+[sst] ep22/100 lr 5.68e-04 loss 1.287 val_loss 4.628 | COCO AP50 80.40 Pr 97.10 Re 83.59 F1 89.84 | VOC AP50 80.75 | 1.8 min 
+[sst] ep23/100 lr 5.62e-04 loss 1.289 val_loss 4.592 | COCO AP50 80.47 Pr 97.17 Re 83.86 F1 90.02 | VOC AP50 80.98 | 1.8 min 
+[sst] ep24/100 lr 5.56e-04 loss 1.253 val_loss 4.681 | COCO AP50 80.31 Pr 97.01 Re 83.04 F1 89.48 | VOC AP50 80.35 | 1.8 min 
+[sst] ep25/100 lr 5.49e-04 loss 1.229 val_loss 4.762 | COCO AP50 79.69 Pr 97.37 Re 82.73 F1 89.46 | VOC AP50 80.13 | 1.8 min 
+[sst] ep26/100 lr 5.42e-04 loss 1.242 val_loss 4.806 | COCO AP50 79.40 Pr 97.08 Re 82.00 F1 88.91 | VOC AP50 79.40 | 1.8 min 
+[sst] ep27/100 lr 5.34e-04 loss 1.207 val_loss 5.014 | COCO AP50 77.83 Pr 97.51 Re 80.29 F1 88.07 | VOC AP50 77.99 | 1.8 min 
+[sst] ep28/100 lr 5.27e-04 loss 1.211 val_loss 5.067 | COCO AP50 77.31 Pr 98.05 Re 79.83 F1 88.01 | VOC AP50 77.78 | 1.8 min 
+[sst] ep29/100 lr 5.19e-04 loss 1.192 val_loss 5.101 | COCO AP50 78.08 Pr 97.83 Re 80.06 F1 88.06 | VOC AP50 78.10 | 1.8 min 
+[sst] ep30/100 lr 5.11e-04 loss 1.189 val_loss 5.184 | COCO AP50 77.34 Pr 98.11 Re 79.27 F1 87.69 | VOC AP50 77.48 | 1.8 min 
+[sst] ep31/100 lr 5.03e-04 loss 1.161 val_loss 5.282 | COCO AP50 77.23 Pr 97.98 Re 79.14 F1 87.56 | VOC AP50 77.29 | 1.8 min 
+[sst] ep32/100 lr 4.94e-04 loss 1.142 val_loss 5.311 | COCO AP50 76.69 Pr 98.44 Re 78.92 F1 87.60 | VOC AP50 77.21 | 1.8 min 
+[sst] ep33/100 lr 4.85e-04 loss 1.138 val_loss 5.442 | COCO AP50 76.60 Pr 98.37 Re 78.12 F1 87.09 | VOC AP50 76.64 | 1.8 min 
+[sst] ep34/100 lr 4.76e-04 loss 1.096 val_loss 5.539 | COCO AP50 75.91 Pr 98.70 Re 77.60 F1 86.89 | VOC AP50 76.22 | 1.8 min 
+[sst] ep35/100 lr 4.67e-04 loss 1.097 val_loss 5.552 | COCO AP50 75.88 Pr 98.64 Re 77.75 F1 86.96 | VOC AP50 76.31 | 1.8 min 
+[sst] ep36/100 lr 4.58e-04 loss 1.068 val_loss 5.645 | COCO AP50 75.00 Pr 98.74 Re 76.79 F1 86.39 | VOC AP50 75.43 | 1.8 min 
+[sst] ep37/100 lr 4.48e-04 loss 1.059 val_loss 5.777 | COCO AP50 74.93 Pr 98.69 Re 76.33 F1 86.08 | VOC AP50 75.07 | 1.8 min 
+[sst] ep38/100 lr 4.39e-04 loss 1.055 val_loss 5.800 | COCO AP50 74.95 Pr 98.72 Re 76.31 F1 86.08 | VOC AP50 75.07 | 1.8 min 
+[sst] ep39/100 lr 4.29e-04 loss 1.041 val_loss 5.808 | COCO AP50 74.97 Pr 98.74 Re 76.12 F1 85.97 | VOC AP50 74.96 | 1.8 min 
+[sst] ep40/100 lr 4.19e-04 loss 1.028 val_loss 5.799 | COCO AP50 74.97 Pr 98.72 Re 76.43 F1 86.16 | VOC AP50 75.17 | 1.8 min 
+[sst] ep41/100 lr 4.09e-04 loss 1.000 val_loss 5.809 | COCO AP50 74.95 Pr 98.69 Re 76.50 F1 86.19 | VOC AP50 75.20 | 1.8 min 
+[sst] ep42/100 lr 3.99e-04 loss 0.996 val_loss 5.882 | COCO AP50 74.11 Pr 98.85 Re 75.93 F1 85.89 | VOC AP50 74.64 | 1.8 min 
+[sst] ep43/100 lr 3.89e-04 loss 0.998 val_loss 5.846 | COCO AP50 74.75 Pr 98.44 Re 76.16 F1 85.88 | VOC AP50 74.77 | 1.8 min 
+[sst] ep44/100 lr 3.79e-04 loss 0.990 val_loss 5.768 | COCO AP50 74.86 Pr 98.57 Re 76.37 F1 86.06 | VOC AP50 75.02 | 1.8 min 
+[sst] ep45/100 lr 3.68e-04 loss 0.963 val_loss 5.747 | COCO AP50 75.01 Pr 98.74 Re 76.75 F1 86.36 | VOC AP50 75.43 | 1.8 min 
+[sst] ep46/100 lr 3.58e-04 loss 0.972 val_loss 5.716 | COCO AP50 75.08 Pr 98.83 Re 76.75 F1 86.40 | VOC AP50 75.50 | 1.8 min 
+[sst] ep47/100 lr 3.47e-04 loss 0.934 val_loss 5.777 | COCO AP50 74.96 Pr 98.69 Re 76.25 F1 86.03 | VOC AP50 75.04 | 1.8 min 
+[sst] ep48/100 lr 3.37e-04 loss 0.924 val_loss 5.835 | COCO AP50 74.28 Pr 99.03 Re 75.93 F1 85.96 | VOC AP50 74.83 | 1.8 min 
+[sst] ep49/100 lr 3.26e-04 loss 0.911 val_loss 5.852 | COCO AP50 74.22 Pr 98.97 Re 75.56 F1 85.69 | VOC AP50 74.51 | 1.8 min 
+[sst] ep50/100 lr 3.16e-04 loss 0.909 val_loss 5.872 | COCO AP50 74.21 Pr 98.94 Re 75.93 F1 85.92 | VOC AP50 74.76 | 1.8 min 
+[sst] ep51/100 lr 3.05e-04 loss 0.874 val_loss 5.850 | COCO AP50 75.02 Pr 98.76 Re 76.27 F1 86.07 | VOC AP50 75.11 | 1.8 min 
+[sst] ep52/100 lr 2.95e-04 loss 0.867 val_loss 5.828 | COCO AP50 75.08 Pr 98.79 Re 76.64 F1 86.32 | VOC AP50 75.43 | 1.8 min 
+[sst] ep53/100 lr 2.84e-04 loss 0.850 val_loss 5.846 | COCO AP50 74.97 Pr 98.66 Re 76.45 F1 86.15 | VOC AP50 75.19 | 1.8 min 
+[sst] ep54/100 lr 2.73e-04 loss 0.858 val_loss 5.994 | COCO AP50 74.06 Pr 98.73 Re 75.47 F1 85.55 | VOC AP50 74.28 | 1.8 min 
+[sst] ep55/100 lr 2.63e-04 loss 0.828 val_loss 6.218 | COCO AP50 73.01 Pr 98.64 Re 74.39 F1 84.82 | VOC AP50 73.16 | 1.8 min 
+[sst] ep56/100 lr 2.53e-04 loss 0.806 val_loss 6.283 | COCO AP50 72.18 Pr 98.81 Re 73.97 F1 84.61 | VOC AP50 72.75 | 1.8 min 
+[sst] ep57/100 lr 2.42e-04 loss 0.795 val_loss 6.231 | COCO AP50 72.95 Pr 98.56 Re 74.33 F1 84.74 | VOC AP50 73.04 | 1.8 min 
+[sst] ep58/100 lr 2.32e-04 loss 0.776 val_loss 6.198 | COCO AP50 72.93 Pr 98.53 Re 74.74 F1 85.01 | VOC AP50 73.35 | 1.8 min 
+[sst] ep59/100 lr 2.22e-04 loss 0.773 val_loss 6.075 | COCO AP50 73.77 Pr 98.35 Re 75.58 F1 85.47 | VOC AP50 74.06 | 1.8 min 
+[sst] ep60/100 lr 2.12e-04 loss 0.760 val_loss 6.117 | COCO AP50 73.69 Pr 98.27 Re 75.14 F1 85.16 | VOC AP50 73.67 | 1.8 min 
+[sst] ep61/100 lr 2.02e-04 loss 0.732 val_loss 6.152 | COCO AP50 73.68 Pr 98.25 Re 75.22 F1 85.21 | VOC AP50 73.71 | 1.8 min 
+[sst] ep62/100 lr 1.92e-04 loss 0.729 val_loss 6.051 | COCO AP50 73.80 Pr 98.37 Re 75.93 F1 85.71 | VOC AP50 74.34 | 1.8 min 
+[sst] ep63/100 lr 1.83e-04 loss 0.718 val_loss 6.044 | COCO AP50 74.54 Pr 98.11 Re 76.33 F1 85.86 | VOC AP50 74.66 | 1.8 min 
+[sst] ep64/100 lr 1.73e-04 loss 0.694 val_loss 6.070 | COCO AP50 74.50 Pr 98.08 Re 76.02 F1 85.65 | VOC AP50 74.40 | 1.8 min 
+[sst] ep65/100 lr 1.64e-04 loss 0.676 val_loss 6.023 | COCO AP50 74.51 Pr 98.09 Re 76.06 F1 85.68 | VOC AP50 74.45 | 1.8 min 
+[sst] ep66/100 lr 1.55e-04 loss 0.660 val_loss 6.007 | COCO AP50 74.45 Pr 98.01 Re 76.08 F1 85.66 | VOC AP50 74.41 | 1.8 min 
+[sst] ep67/100 lr 1.46e-04 loss 0.634 val_loss 6.071 | COCO AP50 73.73 Pr 98.31 Re 75.58 F1 85.46 | VOC AP50 74.03 | 1.8 min 
+[sst] ep68/100 lr 1.37e-04 loss 0.642 val_loss 6.088 | COCO AP50 73.71 Pr 98.29 Re 75.64 F1 85.49 | VOC AP50 74.05 | 1.8 min 
+[sst] ep69/100 lr 1.29e-04 loss 0.611 val_loss 6.133 | COCO AP50 73.64 Pr 98.19 Re 75.56 F1 85.40 | VOC AP50 73.92 | 1.8 min 
+[sst] ep70/100 lr 1.20e-04 loss 0.589 val_loss 6.177 | COCO AP50 73.51 Pr 98.04 Re 75.22 F1 85.13 | VOC AP50 73.55 | 1.8 min 
+[sst] ep71/100 lr 1.12e-04 loss 0.582 val_loss 6.185 | COCO AP50 73.45 Pr 97.96 Re 75.22 F1 85.10 | VOC AP50 73.49 | 1.8 min 
+[sst] ep72/100 lr 1.04e-04 loss 0.574 val_loss 6.154 | COCO AP50 73.49 Pr 97.99 Re 75.66 F1 85.39 | VOC AP50 73.84 | 1.8 min 
+[sst] ep73/100 lr 9.69e-05 loss 0.559 val_loss 6.190 | COCO AP50 73.48 Pr 97.98 Re 75.72 F1 85.43 | VOC AP50 73.87 | 1.8 min 
+[sst] ep74/100 lr 8.95e-05 loss 0.536 val_loss 6.217 | COCO AP50 73.43 Pr 97.91 Re 75.60 F1 85.32 | VOC AP50 73.73 | 1.8 min 
+[sst] ep75/100 lr 8.24e-05 loss 0.514 val_loss 6.240 | COCO AP50 73.36 Pr 97.83 Re 75.37 F1 85.14 | VOC AP50 73.50 | 1.8 min 
+[sst] ep76/100 lr 7.56e-05 loss 0.504 val_loss 6.246 | COCO AP50 73.34 Pr 97.80 Re 75.14 F1 84.99 | VOC AP50 73.31 | 1.8 min 
+[sst] ep77/100 lr 6.91e-05 loss 0.490 val_loss 6.254 | COCO AP50 73.34 Pr 97.82 Re 75.08 F1 84.95 | VOC AP50 73.28 | 1.8 min 
+[sst] ep78/100 lr 6.29e-05 loss 0.480 val_loss 6.228 | COCO AP50 73.44 Pr 97.94 Re 75.25 F1 85.10 | VOC AP50 73.48 | 1.8 min 
+[sst] ep79/100 lr 5.69e-05 loss 0.472 val_loss 6.235 | COCO AP50 73.46 Pr 97.97 Re 75.12 F1 85.04 | VOC AP50 73.43 | 1.8 min 
+[sst] ep80/100 lr 5.13e-05 loss 0.459 val_loss 6.280 | COCO AP50 72.75 Pr 98.30 Re 74.83 F1 84.97 | VOC AP50 73.22 | 1.8 min 
+[sst] ep81/100 lr 4.60e-05 loss 0.453 val_loss 6.311 | COCO AP50 72.77 Pr 98.32 Re 74.66 F1 84.87 | VOC AP50 73.12 | 1.8 min 
+[sst] ep82/100 lr 4.09e-05 loss 0.438 val_loss 6.310 | COCO AP50 72.80 Pr 98.35 Re 74.68 F1 84.90 | VOC AP50 73.16 | 1.8 min 
+[sst] ep83/100 lr 3.62e-05 loss 0.428 val_loss 6.304 | COCO AP50 72.82 Pr 98.37 Re 74.89 F1 85.04 | VOC AP50 73.34 | 1.8 min 
+[sst] ep84/100 lr 3.19e-05 loss 0.420 val_loss 6.318 | COCO AP50 72.85 Pr 98.40 Re 74.79 F1 84.98 | VOC AP50 73.28 | 1.8 min 
+[sst] ep85/100 lr 2.78e-05 loss 0.404 val_loss 6.343 | COCO AP50 72.86 Pr 98.42 Re 74.74 F1 84.96 | VOC AP50 73.25 | 1.8 min 
+[sst] ep86/100 lr 2.41e-05 loss 0.404 val_loss 6.343 | COCO AP50 72.86 Pr 98.42 Re 74.85 F1 85.03 | VOC AP50 73.35 | 1.8 min 
+[sst] ep87/100 lr 2.07e-05 loss 0.400 val_loss 6.359 | COCO AP50 72.86 Pr 98.41 Re 74.70 F1 84.93 | VOC AP50 73.24 | 1.8 min 
+[sst] ep88/100 lr 1.77e-05 loss 0.394 val_loss 6.392 | COCO AP50 72.83 Pr 98.37 Re 74.60 F1 84.85 | VOC AP50 73.13 | 1.8 min 
+[sst] ep89/100 lr 1.50e-05 loss 0.392 val_loss 6.418 | COCO AP50 72.82 Pr 98.36 Re 74.56 F1 84.82 | VOC AP50 73.08 | 1.8 min 
+[sst] ep90/100 lr 1.27e-05 loss 0.386 val_loss 6.445 | COCO AP50 72.81 Pr 98.35 Re 74.49 F1 84.78 | VOC AP50 73.03 | 1.8 min 
+[sst] ep91/100 lr 1.07e-05 loss 0.379 val_loss 6.461 | COCO AP50 72.81 Pr 98.35 Re 74.35 F1 84.68 | VOC AP50 72.93 | 1.8 min 
+[sst] ep92/100 lr 9.13e-06 loss 0.382 val_loss 6.482 | COCO AP50 72.81 Pr 98.35 Re 74.31 F1 84.65 | VOC AP50 72.89 | 1.8 min 
+[sst] ep93/100 lr 7.87e-06 loss 0.377 val_loss 6.504 | COCO AP50 72.81 Pr 98.36 Re 74.18 F1 84.58 | VOC AP50 72.80 | 1.8 min 
+[sst] ep94/100 lr 6.97e-06 loss 0.378 val_loss 6.522 | COCO AP50 72.82 Pr 98.37 Re 74.12 F1 84.54 | VOC AP50 72.76 | 1.8 min 
+[sst] ep95/100 lr 6.43e-06 loss 0.380 val_loss 6.541 | COCO AP50 72.82 Pr 98.37 Re 74.08 F1 84.51 | VOC AP50 72.74 | 1.8 min 
+[sst] ep96/100 lr 6.25e-06 loss 0.374 val_loss 6.558 | COCO AP50 72.83 Pr 98.38 Re 74.01 F1 84.48 | VOC AP50 72.70 | 1.8 min 
+[sst] ep97/100 lr 6.25e-06 loss 0.369 val_loss 6.576 | COCO AP50 72.09 Pr 98.65 Re 73.89 F1 84.49 | VOC AP50 72.61 | 1.8 min 
+[sst] ep98/100 lr 6.25e-06 loss 0.381 val_loss 6.579 | COCO AP50 72.09 Pr 98.66 Re 73.85 F1 84.47 | VOC AP50 72.58 | 1.8 min 
+[sst] ep99/100 lr 6.25e-06 loss 0.373 val_loss 6.578 | COCO AP50 72.11 Pr 98.67 Re 73.83 F1 84.46 | VOC AP50 72.58 | 1.8 min 
+[sst] ep100/100 lr 6.25e-06 loss 0.377 val_loss 6.580 | COCO AP50 72.10 Pr 98.67 Re 73.79 F1 84.43 | VOC AP50 72.55 | 1.8 min 
