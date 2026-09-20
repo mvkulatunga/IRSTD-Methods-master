@@ -105,20 +105,26 @@ def voc_ap(rec, prec):
     return float(np.sum((mrec[idx + 1] - mrec[idx]) * mpre[idx + 1]))
 
 
-def compute_ap50_f1(all_dets, gt_by_img, iou_thr=0.5):
-    """all_dets [(score, img_idx, box)] + per-image GT -> (AP, best F1)."""
+def compute_ap50_f1_full(all_dets, gt_by_img, iou_thr=0.5):
+    """all_dets [(score, img_idx, box)] + per-image GT ->
+    {"ap", "f1", "thr", "prec", "rec"} -- thr/prec/rec are the score threshold
+    (and its Pr/Re) at the best-F1 point on the curve, i.e. the single
+    operating point "F1" already reported elsewhere in this codebase actually
+    corresponds to. Used by callers that need more than just (ap, f1), e.g.
+    the per-sequence breakdown in utils/perseq.py.
+    """
     npos = sum(len(g) for g in gt_by_img)
     if npos == 0 or len(all_dets) == 0:
-        return 0.0, 0.0
+        return {"ap": 0.0, "f1": 0.0, "thr": 0.0, "prec": 0.0, "rec": 0.0}
 
-    all_dets.sort(key=lambda d: d[0], reverse=True)
-    nd = len(all_dets)
+    dets = sorted(all_dets, key=lambda d: d[0], reverse=True)
+    nd = len(dets)
     tp = np.zeros(nd)
     fp = np.zeros(nd)
     matched = {i: np.zeros(len(g), dtype=bool) for i, g in enumerate(gt_by_img)}
 
     # greedy matching in score order: each GT can only be claimed once
-    for k, (score, img, box) in enumerate(all_dets):
+    for k, (score, img, box) in enumerate(dets):
         gts = gt_by_img[img]
         if len(gts) == 0:
             fp[k] = 1
@@ -137,14 +143,27 @@ def compute_ap50_f1(all_dets, gt_by_img, iou_thr=0.5):
     prec = tp_c / np.maximum(tp_c + fp_c, 1e-9)
     ap = voc_ap(rec, prec)
     f1 = 2 * prec * rec / np.maximum(prec + rec, 1e-9)
-    return ap, float(f1.max())
+    best_i = int(np.argmax(f1))
+    return {
+        "ap": ap,
+        "f1": float(f1[best_i]),
+        "thr": float(dets[best_i][0]),
+        "prec": float(prec[best_i]),
+        "rec": float(rec[best_i]),
+    }
+
+
+def compute_ap50_f1(all_dets, gt_by_img, iou_thr=0.5):
+    """all_dets [(score, img_idx, box)] + per-image GT -> (AP, best F1)."""
+    r = compute_ap50_f1_full(all_dets, gt_by_img, iou_thr)
+    return r["ap"], r["f1"]
 
 
 @torch.no_grad()
-def evaluate(
+def evaluate_full(
     model, loader, device, use_dam, strides, num_classes, conf_thr=1e-3, nms_thr=0.65
 ):
-    """Run the model over loader and score it. -> (ap50, best_f1)."""
+    """Run the model over loader and score it. -> compute_ap50_f1_full()'s dict."""
     model.eval()
     all_dets, gt_by_img = [], []
     img_idx = 0
@@ -163,4 +182,13 @@ def evaluate(
             gt_by_img.append(gts[b].cpu().numpy())
             img_idx += 1
 
-    return compute_ap50_f1(all_dets, gt_by_img)
+    return compute_ap50_f1_full(all_dets, gt_by_img)
+
+
+@torch.no_grad()
+def evaluate(
+    model, loader, device, use_dam, strides, num_classes, conf_thr=1e-3, nms_thr=0.65
+):
+    """Run the model over loader and score it. -> (ap50, best_f1)."""
+    r = evaluate_full(model, loader, device, use_dam, strides, num_classes, conf_thr, nms_thr)
+    return r["ap"], r["f1"]

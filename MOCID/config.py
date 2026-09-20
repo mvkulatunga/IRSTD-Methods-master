@@ -8,16 +8,27 @@ class Config:
     IMG_SIZE = (512, 512)
     BATCH_SIZE = 4
 
-    LR_INIT = 0.01
-    MIN_LR = 1e-4
-    LR_DAM = 1e-3  # stage-2 LR; 1e-2 diverges a fresh Mamba branch
+    # LR_INIT follows SSTNet's linear batch-size scaling rule (which the paper's
+    # split/training convention follows): base 0.01 is defined for batch 64, so
+    # at our batch of 4 that's 0.01 * 4/64 = 6.25e-4. Running 0.01 unscaled (16x
+    # too high) is the prime suspect behind the Base/`.+FISTA` mid-training
+    # collapse (EXPERIMENTS.md: Base and R0 runs) -- MIN_LR is scaled by the same
+    # factor so the warmup/cosine shape (in ratio terms) is unchanged.
+    LR_INIT = 6.25e-4
+    MIN_LR = 6.25e-6
+    LR_DAM = 1e-3  # stage-2 LR; 1e-2 diverges a fresh Mamba branch -- unreviewed, see PLAN.md
     WARMUP_EPOCHS = 6
     MOMENTUM = 0.937
     WEIGHT_DECAY = 5e-4
     EPOCHS_SPTBACKBONE = 100
     EPOCHS_DAM = 100
     EVAL_EVERY = 2
-    TRACK_BEST_AFTER = 40
+    # 0 = track "best AP50" from the first eval. Previously 40, on the assumption
+    # that an early spike is a fluke -- but both Base and R0 showed a genuine
+    # good early epoch (~epoch 4-8) get overwritten by mid-training instability
+    # with no checkpoint saved to fall back on. Track from the start so a good
+    # early result is never silently lost again.
+    TRACK_BEST_AFTER = 0
 
     STRIDES = [8, 16, 32]
     NUM_CLASSES = 1

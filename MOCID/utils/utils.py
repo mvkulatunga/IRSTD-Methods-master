@@ -104,6 +104,27 @@ def load_checkpoint(path, model, opt=None, sched=None, ema=None):
     return nxt
 
 
+def load_external_pretrained(model, ckpt_path):
+    """Load an outside checkpoint (e.g. official YOLOX-S COCO weights) into
+    `model`, keeping only keys whose name AND shape match -- everything else
+    (a mismatched head, a differently-named backbone) is safely skipped, not
+    errored. -> count of skipped source keys.
+
+    For the stock-architecture Base run this transfers the whole backbone/neck
+    (only the final class-count-specific layers get skipped). For this repo's
+    own FISTA backbone, key *names* differ from stock CSPDarknet's, so this
+    currently transfers nothing there -- a name-mapping table is a follow-up,
+    not yet done. Get yolox_s.pth from:
+    https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_s.pth
+    """
+    raw = getattr(model, "_orig_mod", model)
+    ck = torch.load(ckpt_path, map_location="cpu")
+    sd = ck.get("model", ck.get("state_dict", ck)) if isinstance(ck, dict) else ck
+    dropped = filtered_load(raw, strip_compile(sd))
+    print(f"[pretrained] {ckpt_path}: loaded, {dropped} non-matching key(s) skipped")
+    return dropped
+
+
 def build_optimizer(model, cfg, epochs, lr=None):
     """-> (SGD+Nesterov over trainable params, LambdaLR with warmup + cosine decay)."""
     lr = cfg.LR_INIT if lr is None else lr

@@ -7,6 +7,13 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+# ImageNet mean/std (RGB order) -- matches the normalisation the paper's SSTNet-
+# derived recipe uses, and what any COCO-pretrained backbone (e.g. YOLOX-S)
+# expects its input distribution to look like. Previously this pipeline just
+# scaled to [0,1] with no further normalisation.
+IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+
 
 class MOCIDDataset(Dataset):
     """T-frame clips from an annotation file; the last frame carries the labels."""
@@ -60,7 +67,8 @@ class MOCIDDataset(Dataset):
         return len(self.clips)
 
     def __getitem__(self, idx):
-        """idx -> ((T,3,H,W) float clip in [0,1], {"boxes": (N,4) xyxy, "labels": (N,)})."""
+        """idx -> ((T,3,H,W) float clip, ImageNet-normalised,
+        {"boxes": (N,4) xyxy, "labels": (N,), "path": str})."""
         clip_data = self.clips[idx]
         target_info = clip_data[-1]
 
@@ -94,12 +102,15 @@ class MOCIDDataset(Dataset):
             if do_flip:
                 img = cv2.flip(img, 1)
             img = img.astype(np.float32) / 255.0
+            img = (img - IMAGENET_MEAN) / IMAGENET_STD
             imgs.append(np.transpose(img, (2, 0, 1)))
 
         imgs_tensor = torch.tensor(np.array(imgs), dtype=torch.float32)
         target = {
             "boxes": torch.tensor(boxes, dtype=torch.float32),
             "labels": torch.tensor(labels, dtype=torch.int64),
+            "path": target_info["path"],  # source image path; lets an eval script
+            # recover which video a prediction came from (utils/perseq.py)
         }
         return imgs_tensor, target
 

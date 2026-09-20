@@ -28,6 +28,11 @@ def parse_args():
     p_eval.add_argument("--no-dam", dest="dam", action="store_false")
     p_eval.add_argument("--conf", type=float, default=1e-3)
     p_eval.add_argument("--nms", type=float, default=0.65)
+    p_eval.add_argument(
+        "--perseq",
+        action="store_true",
+        help="print a per-video recall/confidence breakdown instead of just the aggregate",
+    )
     p_eval.set_defaults(dam=None)
 
     p_params = sub.add_parser("params", help="parameter counts with and without DAM")
@@ -68,6 +73,27 @@ def cmd_eval(args, cfg, device):
 
     val_ds = MOCIDDataset(cfg.val_path, T=cfg.T, img_size=cfg.IMG_SIZE, is_train=False)
     assert len(val_ds) > 0, f"Val set empty — check {cfg.val_path} (cwd={os.getcwd()})"
+
+    row = ".+FISTA+DAM (MOCID)" if use_dam else ".+FISTA"
+    print(f"\n=== {row} ===")
+
+    if args.perseq:
+        from utils.perseq import collate_eval_perseq, perseq_breakdown, print_perseq_table
+
+        loader = DataLoader(
+            val_ds,
+            batch_size=cfg.BATCH_SIZE,
+            shuffle=False,
+            num_workers=4,
+            collate_fn=collate_eval_perseq,
+        )
+        summary, per_seq = perseq_breakdown(
+            model, loader, device, use_dam, cfg.STRIDES, cfg.NUM_CLASSES,
+            conf_thr=args.conf, nms_thr=args.nms,
+        )
+        print_perseq_table(summary, per_seq)
+        return
+
     loader = DataLoader(
         val_ds,
         batch_size=cfg.BATCH_SIZE,
@@ -75,7 +101,6 @@ def cmd_eval(args, cfg, device):
         num_workers=4,
         collate_fn=collate_eval,
     )
-
     ap50, f1 = evaluate(
         model,
         loader,
@@ -86,8 +111,6 @@ def cmd_eval(args, cfg, device):
         conf_thr=args.conf,
         nms_thr=args.nms,
     )
-    row = ".+FISTA+DAM (MOCID)" if use_dam else ".+FISTA"
-    print(f"\n=== {row} ===")
     print(f"AP50 : {ap50 * 100:.2f}")
     print(f"F1   : {f1 * 100:.2f}   (best over PR sweep)")
 
