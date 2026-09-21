@@ -1,7 +1,7 @@
 # MOCID code review: model and DAM findings
 
 A review of the model code (`model.py`, `components/components.py`, `components/dam.py`,
-`utils/utils.py`) against the AAAI-25 paper, done while reproducing the Base → +FISTA →
+`utils/utils.py`) against the MOCID paper, done while reproducing the Base → +FISTA →
 +FISTA+DAM ablation on DAUB. It complements [REPORT.md](REPORT.md), which audits the
 code module by module. The difference here is that most findings come with a
 measurement, and several of them settle verdicts REPORT.md left as "to test".
