@@ -15,7 +15,7 @@ paper's metric). The checkpoints come from the ladder run recorded in
 | # | Finding | Measured impact | REPORT.md | Suggested change |
 |---|---|---|---|---|
 | 1 | The DAM "exact no-op" init is not a no-op | **−22.1 AP50** the moment DAM is switched on | item 11 (⚠️ keep) | Take the residual from `F_R`, not `F_T`; verified to restore 89.52 exactly |
-| 2 | The target frame enters the neck three times | Part of #1; paper-inconsistent | item 12 (🔧) | Pool the T−1 DAM outputs only, keep one target path |
+| 2 | The target frame is included in the temporal pool | Part of #1; contradicts Fig. 2 | item 12 (🔧) | Pool the T−1 DAM outputs only |
 | 3 | DAM is 0.57 M under the paper's budget; the "paper-literal" SDS is ruled out | 3.03 M vs 3.60 M | item 9 (🔧) | Widen `cdc_hidden` to ~86; drop the paper-literal Phase 3 run |
 | 4 | Stage 2 trains FPN + head, not just the DAM | Stage 2 decays from 87.07 to 79.93 | item 17 | Freeze FPN/head after fix #1, as the paper states |
 | 5 | Base uses PAFPN, MOCID uses plain FPN | Ablation is not neck-controlled | — | Add a Base with MOCID's FPN |
@@ -71,10 +71,11 @@ would expect if the reference frames were carrying the motion signal.
 **Why it matters for our results.** Stage 2 does not start from the stage-1 model; it
 starts from a damaged one and has to relearn the lost signal through a freshly
 initialised Mamba branch. In our run it partly recovered (86.90 after the first epoch,
-best 87.07 at epoch 3) but never returned to 89.52. That is why our +FISTA+DAM
-(87.07) sits *below* +FISTA (89.52), the opposite of the paper's ordering (92.42 →
-95.93). We cannot yet say whether DAM helps, because the comparison is confounded by
-this handover.
+best 87.07 at epoch 3) but never returned to 89.52. This is the most likely reason our
++FISTA+DAM (87.07) sits *below* +FISTA (89.52), the opposite of the paper's ordering
+(92.42 → 95.93), though it has not been tested yet: overfitting in stage 2 (finding 4)
+could also explain it. We cannot yet say whether DAM helps, because the comparison is
+confounded by this handover. The test is a stage-2 rerun with only the change below.
 
 **Suggested change.** Take the residual from the reference frame:
 
@@ -102,30 +103,35 @@ guards the whole two-stage design.
 
 ---
 
-## 2. The target frame enters the neck three times
+## 2. The target frame is included in the temporal pool
 
-**Where.** `components/dam.py` `DisplacementNet.forward` (`disp.append(F_T)`), and
-`components/components.py` `FPN.forward` (`x3 = x3 + ff[0]`, and likewise for `x4`, `x5`).
+**Where.** `components/dam.py` `DisplacementNet.forward` (`disp.append(F_T)`).
 
-**Paper.** "A Temporal Pooling function is employed to fuse the results of DAMs": the pool
-runs over the **T−1** DAM outputs. The pipeline is STB → DAM → pooling → FPN → head; no
-target skip into the FPN is described.
+**Paper.** The text says "a Temporal Pooling function is employed to fuse the results of
+DAMs", and Fig. 2 (`diagrams/mocid_architecture.png`) shows exactly that: only the T−1
+DAM outputs have arrows into Temporal Pooling. The target feature `F_T` takes two other
+paths: into every DAM, and directly into the FPN, where it is added (⊕) to the pooled
+features `F_f` at each level.
 
-**Code.** The target is (a) one of the T slices in the pool, (b) the implicit residual of
-every DAM output (finding 1), and (c) added to the pooled result again at the FPN input.
-REPORT.md item 12 already flags (a).
+**Code.** The FPN addition (`x3 = x3 + ff[0]` in `FPN.forward`) matches Fig. 2. The
+deviation is that `F_T` is also appended as a T-th slice of the pool, so the pool runs
+over 5 items instead of 4. REPORT.md item 12 already flags this.
 
-**Why it matters.** With (b) and (a) together, a displacement feature only influences the
-pool where it exceeds the target's activation, and at init the max is saturated by the
-target. With (c) the neck receives roughly `F_T + max(F_T, ...)`, so the target
-dominates whatever DAM produces.
+**Why it matters.** A displacement feature only reaches the neck where it exceeds the
+target's own activation, because the max also sees `F_T`. Combined with finding 1, at
+init the max is saturated by the target everywhere. Fig. 4(a) does not settle which
+frame the DAM residual comes from: the block is drawn with a single input, while TIDS
+takes two, so the residual choice in finding 1 is an open reading of the paper rather
+than a contradiction of it.
 
-**Suggested change.** Apply finding 1 first, since it removes (b). Then run one
-paper-faithful variant: pool over the T−1 DAM outputs only and keep the FPN skip (c) as
-the single target path. The skip is needed in some form because stage 1 has no DAM and
-the neck still has to see the target, so this is a variant to measure, not a straight
-revert. Mean pooling versus max is worth a run at the same time; the paper says only
-"Temporal Pooling".
+**Suggested change.** Apply finding 1 first. Then run the Fig. 2 variant: pool over the
+T−1 DAM outputs only, keeping the FPN addition as the target path. Mean pooling versus
+max is worth a run at the same time; the paper says only "Temporal Pooling".
+
+**Open question.** If the pool only sees DAM outputs, the paper does not say what stage 1
+pools, since there is no DAM yet. The code pools the raw backbone features of all five
+frames in stage 1. Any change here has to keep the stage-1 → stage-2 handover lossless
+(the check in finding 1).
 
 ---
 
@@ -144,8 +150,8 @@ revert. Mean pooling versus max is worth a run at the same time; the paper says 
 | DAM | 3.03 M | 3.60 M | −16% |
 | Full MOCID | 12.53 M | 13.05 M | −4% |
 
-The FISTA side is faithful. The whole gap is in the DAM, and specifically in the SDS
-bottleneck width, which the paper does not state:
+The FISTA side is faithful. The whole gap is in the DAM. The SDS is the part the paper
+leaves least specified, and its width alone is enough to close the gap:
 
 | DAM configuration | DAM params |
 |---|---|
@@ -160,13 +166,18 @@ Two conclusions:
 - **The paper-literal SDS cannot be what the authors built.** The code comment calls the
   bottleneck "NOT from the MOCID paper" and proposes `cdc_hidden = d_inner + 2·d_state`
   as the paper-literal setting, and REPORT.md item 9 schedules that run for Phase 3. But
-  that model would be 22.2 M against a reported 13.05 M. The paper's Fig. 4(b) also
-  shows an **Embedding** block between 3DCDC and B/C/Δ, which is exactly the code's
-  `proj` layer. So the bottleneck is in the paper; only its width is unspecified.
+  that model would be 22.2 M against a reported 13.05 M, so the authors must have kept
+  the 3DCDC smaller somehow. The paper does not show how. Fig. 4(b) has the 3DCDC output
+  B, C and Δ directly (its separate Embedding produces A, which matches the code's learned
+  `A_log`), so the code's CDC → 1×1 bottleneck is indeed not drawn in the paper, as the
+  code comment says. A bottleneck, a grouped 3DCDC or narrower channels would all fit
+  the budget.
 
 **Suggested change.** Make `cdc_hidden` an explicit config value and set it to match the
-3.60 M budget (86, or the nearest round width such as 96, which gives 3.84 M). Correct
-the comment in `SDS`. Remove the paper-literal run from the Phase 3 plan.
+3.60 M budget (86, or the nearest round width such as 96, which gives 3.84 M). This keeps
+the code's bottleneck design and only fixes its size. Update the comment in `SDS` to say
+the paper-literal width is ruled out by Table 2. Remove the paper-literal run from the
+Phase 3 plan.
 
 ---
 
