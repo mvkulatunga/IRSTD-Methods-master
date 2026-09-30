@@ -144,7 +144,11 @@ class TIDS(nn.Module):
 
 
 class DAMBlock(nn.Module):
-    """Gated Mamba mixer around TIDS. F_T, F_R (B,C,H,W) -> displacement (B,C,H,W)."""
+    """Gated Mamba mixer around TIDS. F_T, F_R (B,C,H,W) -> displacement (B,C,H,W).
+
+    The output replaces the reference frame's slot in the temporal pool: the reference
+    features plus a learned displacement correction, out(F_R + mid(TIDS * gate)).
+    """
 
     def __init__(self, C, d_state=16, expand=1, theta=0.7):
         super().__init__()
@@ -157,7 +161,10 @@ class DAMBlock(nn.Module):
         self.mid = nn.Conv2d(d_inner, C, 1, bias=False)  # between multiply and residual
         self.out = nn.Conv2d(C, C, 1, bias=False)  # final linear
 
-        # zero initialisation to weights (helps prevent model from feature collapse at initial stage)
+        # mid = 0 and out = identity make the block return exactly F_R at init, so switching
+        # the DAM on at the start of stage 2 leaves the temporal pool, and the model's output,
+        # as stage 1 left them (tools/check_dam.py, "handover"). The correction then grows
+        # from zero as mid trains.
         nn.init.zeros_(self.mid.weight)
         with torch.no_grad():
             self.out.weight.zero_()
@@ -167,7 +174,9 @@ class DAMBlock(nn.Module):
             self.out.weight[eye, eye, 0, 0] = 1.0
 
     def forward(self, F_T, F_R):
-        res = F_T  # residual is the target-frame input (top branch)
+        # residual from the reference frame. It was F_T, which made every reference slot a
+        # copy of the target at init and cost 64 AP50 at the handover (CODE-REVIEW.md, finding 1)
+        res = F_R
         t = self.norm(F_T)
         r = self.norm(F_R)
 
