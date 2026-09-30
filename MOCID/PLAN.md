@@ -174,8 +174,8 @@ R1**. If R1 ≥ paper, done. If R1 regresses vs R0, bisect the bundle. Architect
 
 | # | Location | Paper | Code | Planned action |
 |---|---|---|---|---|
-| 1 | [utils/utils.py:122](utils/utils.py#L122) | LR 0.01, ×0.1 step decay | warmup(6) + cosine → 1e-4 | revert to MultiStep γ=0.1 |
-| 2 | [config.py:13](config.py#L13) | LR 0.01 throughout | stage-2 LR = 1e-3 | test 0.01; keep 1e-3 only if it truly diverges |
+| 1 | [utils/utils.py:128](utils/utils.py#L128) | LR 0.01, ×0.1 step decay | warmup(6) + cosine → `MIN_LR` | **Done, 2026-09-20 (`afb81a6`):** scaled to SSTNet's batch-linear rate instead (6.25e-4, not a literal MultiStep γ=0.1 revert) — see EXPERIMENTS.md. **Superseded 2026-09-20 (`Base-fixedwd-imagenet`):** tested and ruled out as load-bearing — 0.01 unscaled works fine once row 13 below is fixed. Keeping the scaled value regardless, for fidelity to SSTNet, but it is not why any collapse happened. |
+| 2 | [config.py](config.py) | LR 0.01 throughout | stage-2 LR = 1e-3 | not yet tested |
 | 3 | [utils/losses.py:202](utils/losses.py#L202) | `L = L_reg + L_cls` | `5·L_iou + L_obj + L_cls` | try `reg_weight = 1`; keep obj term (YOLOX-inherent), document |
 | 4 | [components/components.py:216](components/components.py#L216) | n conv + n FISTA blocks | `proj_in/out` halve channels (÷2) | check vs 9.45 M budget — may be load-bearing |
 | 5 | [components/components.py:195](components/components.py#L195) | `f_out = W_t * f`, no residual | `f + f_out` | keep, confirm it isn't masking an init bug |
@@ -185,7 +185,8 @@ R1**. If R1 ≥ paper, done. If R1 regresses vs R0, bisect the bundle. Architect
 | 9 | [utils/utils.py:132](utils/utils.py#L132) `set_stage(2)` | freeze STB, train DAM | trains DAM + pool + fpn + head | try freezing fpn/head too |
 | 10 | [utils/utils.py:9](utils/utils.py#L9) `ModelEMA` | not mentioned | EMA for eval/ckpt | ablate; keep only if it helps |
 | 11 | [model.py:27](model.py#L27) | FPN fuses target + F_f | in-ch `c*2` then `width=0.5` halves back | verify this is a no-op, not a silent bug |
-| 12 | [utils/eval.py:96](utils/eval.py#L96) | "AP50" | VOC post-2010 all-points | fix method so a YOLOX baseline reproduces Base = 83.59 |
+| 12 | [utils/eval.py:96](utils/eval.py#L96) | "AP50" | VOC post-2010 all-points | **Tested, 2026-09-17 (`Base` run):** VOC vs. paper-style COCOeval differ by only ~1 pt (75.95 vs 76.95) — not the explanation for any gap seen. Verdict: no fix needed here; the eval method was never the problem. |
+| 13 *(found 2026-09-20, not in the original sweep)* | [utils/utils.py:128](utils/utils.py#L128) `build_optimizer` | weight decay on conv/linear weights only (standard practice; not stated explicitly) | decay applied uniformly to every parameter, including BatchNorm scale/bias | **Done, 2026-09-20 (`6c609d6`):** excluded every 1-D parameter from decay. **This is the actual root cause** of the Base/R0 collapses — see EXPERIMENTS.md's `Base-fixedwd-imagenet` entry for the isolating ablation and the BatchNorm-γ/objectness-bias mechanism. Rows 1 and 2 above were red herrings tested alongside it. |
 
 **Rule: one lever per run, every run logged in `EXPERIMENTS.md`.**
 

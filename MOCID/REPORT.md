@@ -321,12 +321,18 @@ operating point stated.
 score-ordered matching, one detection per GT. **F1 reported as the max over the PR
 sweep** (`f1.max()`), not at a fixed threshold.
 
-**Verdict.** 🔧 to pin. (a) The AP integration method must be fixed so a plain YOLOX
-baseline reproduces the paper's **Base = 83.59** on DAUB — if VOC-all-points gives a
-different baseline, try COCO-101-point or VOC-11-point. (b) Paper's Pr/Re/F1 are
-self-consistent at one operating point (`2·99.12·97.34/(99.12+97.34) = 98.22`); to
-match those columns, report Pr/Re/F1 at a fixed `conf` chosen on val, not the sweep
-max. AP50 itself is unaffected by (b). PLAN §7 row 12.
+**Verdict.** (a) ✅ **Resolved, 2026-09-17.** Tested directly: VOC-all-points vs. a
+paper-style `pycocotools` COCOeval gave 75.93 vs. 76.95 on the same checkpoint — ~1 pt
+apart. The AP integration method is not the explanation for any gap seen in this
+project; no further action needed here. PLAN §7 row 12.
+(b) 🔧 still open, but the tooling now exists. `utils/eval.py` gained
+`compute_ap50_f1_full`/`evaluate_full` (2026-09-20, `afb81a6`), which expose the
+best-F1 threshold and Pr/Re at that point instead of just `(ap, f1)`; `evaluate()`
+keeps its original two-value return for existing callers. `utils/perseq.py` +
+`main.py eval --perseq` (same commit) report a per-video recall/confidence
+breakdown at that operating point. Reporting Pr/Re/F1 at a fixed, paper-comparable
+`conf` instead of the sweep max is now a matter of calling `evaluate_full`, not of
+building anything new.
 
 ---
 
@@ -339,19 +345,35 @@ DAM trained 100 epochs. `L = L_reg + L_cls`.
 **Implementation.** Stage 1: train `backbone+pool+fpn+head`, `use_dam=False`, 100 ep.
 Stage 2: `seed_from_fista_best` (load best stage-1, drop `disp.*`), freeze backbone
 (`.eval()` for BN), train `disp+pool+fpn+head`, `use_dam=True`, 100 ep. SGD+Nesterov,
-`WARMUP_EPOCHS=6` then **cosine** decay to `MIN_LR=1e-4`. Stage-2 LR **`LR_DAM=1e-3`**.
-`ModelEMA` (stage 2: fast EMA, decay .999, τ 300) used for eval/checkpoints. AMP with
-finite-loss step-skipping and grad-clip 10.
+`WARMUP_EPOCHS=6` then **cosine** decay from `LR_INIT=6.25e-4` to `MIN_LR=6.25e-6`
+(2026-09-20, `afb81a6` — was `0.01`→`1e-4` unscaled). Stage-2 LR **`LR_DAM=1e-3`**,
+unreviewed. `ModelEMA` (stage 2: fast EMA, decay .999, τ 300) used for eval/
+checkpoints. AMP with finite-loss step-skipping and grad-clip 10. Best-checkpoint
+tracking now starts at epoch 1 (`TRACK_BEST_AFTER=0`; was 40 — both Base and the
+FISTA run lost a genuine good early epoch to that gate with no checkpoint saved to
+recover it). `build_optimizer` (`utils/utils.py`) now excludes every 1-D parameter
+(BatchNorm scale/bias, all biases) from weight decay — previously decay applied to
+every parameter uniformly (2026-09-20, `6c609d6`).
 
 **Verdict.** ✅ two-stage structure (100 + 100, freeze STB) is faithful.
-🔧 recipe deviations to test in Phase 3:
-- **row 1** — cosine + 6-ep warmup → MultiStep γ=0.1 (paper).
-- **row 2** — stage-2 LR `1e-3` → `0.01` (paper does not distinguish stages);
-  comment says `1e-2` diverges a fresh Mamba branch — verify after the schedule fix.
-- **row 9** — stage 2 trains `pool+fpn+head` too; paper says "train the DAM". Try
-  freezing FPN/head in stage 2.
-- **row 10** — `ModelEMA` is not in the paper; ablate (keep only if it strictly helps).
-- Warmup itself is not in the paper.
+🔧 recipe deviations, status as tested:
+- **row 1 (LR schedule)** — changed to a scaled rate, then **shown not to be
+  load-bearing**: `Base-fixedwd-imagenet` reaches 89.93 AP50 at the original
+  unscaled `0.01` once the weight-decay fix below is in place. Kept for fidelity
+  to SSTNet, not because it fixes anything.
+- **row 13, not in the original sweep — the actual root cause.** Weight decay was
+  being applied to BatchNorm scale/bias and every bias term. SGD momentum (0.937)
+  amplifies its effective strength by ~1/(1−m) ≈ 16×. Checkpoint inspection showed
+  BatchNorm γ dragged 1.000→0.231 and the deliberately low-prior objectness bias
+  (~−4.6 at init) dragged to +0.610 — this, not the LR, explains the Base/R0
+  mid-training collapses. **Fixed** (`6c609d6`); confirmed as primary cause by the
+  isolating ablation in EXPERIMENTS.md (`Base-fixedwd-imagenet`, 28.94→73.35 AP50
+  @ ep14 from this change alone).
+- **row 2** — stage-2 LR `1e-3` vs. `0.01` — not yet tested.
+- **row 9** — stage 2 trains `pool+fpn+head` too; paper says "train the DAM" — not
+  yet tested by us. `CODE-REVIEW.md` finding 4 independently flags the same thing.
+- **row 10** — `ModelEMA` is not in the paper — not yet tested.
+- Warmup itself is not in the paper — not yet tested.
 
 **❓ Open.** The comparison paragraph mentions pretraining video methods on still
 images before adding temporal modules — check whether MOCID's STB stage is meant to
