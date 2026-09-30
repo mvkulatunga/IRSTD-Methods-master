@@ -5,13 +5,13 @@ import torch
 from torch.utils.data import DataLoader
 
 from config import Config, get_device, setup_torch
-from utils.data import MOCIDDataset, collate_eval
+from utils.data import MOCIDDataset, collate_eval, collate_train
 from utils.eval import evaluate
 from model import MOCID
 from base import MOCIDBase
 from base_fista import MOCIDBaseFISTA
 from train import train_mocid, train_single_stage
-from utils.utils import count_params_m, strip_compile
+from utils.utils import count_params_m, recalibrate_bn, strip_compile
 
 # the paper's Table 2 rows: Base, +FISTA, and the full model (+FISTA+DAM, two stages)
 MODELS = {"MOCID": MOCID, "MOCIDBase": MOCIDBase, "MOCIDBaseFISTA": MOCIDBaseFISTA}
@@ -56,6 +56,14 @@ def parse_args():
         action="store_true",
         help="print a per-video recall/confidence breakdown instead of just the aggregate",
     )
+    p_eval.add_argument(
+        "--recal-bn",
+        type=int,
+        default=0,
+        metavar="N",
+        help="recompute BatchNorm statistics from N training batches before scoring "
+        "(training now does this before every evaluation; use it for older checkpoints)",
+    )
     p_eval.set_defaults(dam=None)
 
     p_params = sub.add_parser("params", help="parameter counts with and without DAM")
@@ -98,6 +106,24 @@ def cmd_eval(args, cfg, device):
     use_dam = use_dam and args.model == "MOCID"
     print(f"loaded {args.ckpt}  ({args.model}, stage={stage})  ->  use_dam={use_dam}")
     print_params(model, args.model)
+
+    if args.recal_bn > 0:
+        # stage 2 froze the backbone, so only the layers after it are recomputed
+        names = None
+        if stage == 2:
+            names = {
+                n for n, m in model.named_modules()
+                if isinstance(m, torch.nn.modules.batchnorm._BatchNorm) and not n.startswith("backbone.")
+            }
+        train_ds = MOCIDDataset(
+            cfg.train_path, T=cfg.T, img_size=cfg.IMG_SIZE, is_train=True, norm=cfg.NORMALISE
+        )
+        loader = DataLoader(
+            train_ds, batch_size=cfg.BATCH_SIZE, shuffle=True, num_workers=4, collate_fn=collate_train
+        )
+        recalibrate_bn(model, loader, device, use_dam, args.recal_bn, names)
+        model.eval()
+        print(f"BatchNorm statistics recomputed from {args.recal_bn} training batches")
 
     val_ds = MOCIDDataset(
         cfg.val_path, T=cfg.T, img_size=cfg.IMG_SIZE, is_train=False, norm=cfg.NORMALISE
@@ -154,7 +180,8 @@ def main():
     cfg = Config(args.profile)
     device = get_device()
     print(f"[config] profile: {cfg.PROFILE}  (LR {cfg.LR_INIT} -> {cfg.MIN_LR}, "
-          f"input {cfg.NORMALISE}, decay on all params: {cfg.DECAY_ALL})")
+          f"input {cfg.NORMALISE}, decay on all params: {cfg.DECAY_ALL}, "
+          f"BatchNorm recomputed before eval: {cfg.BN_RECAL_BATCHES} batches)")
 
     if args.cmd == "train":
         if args.model == "MOCID":

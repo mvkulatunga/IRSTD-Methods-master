@@ -240,8 +240,9 @@ then the command, then Ctrl-A D to detach), or with `nohup`:
 nohup $PY -u main.py --profile r0 --model MOCIDBase train --tag base-jane-1 > runs/base-jane-1.log 2>&1 &
 ```
 
-Or use the helper, which does the `screen` part, prints the GPU state first and always uses
-`--profile r0`:
+Or use the helper, which does the `screen` part, prints the GPU state first, always uses
+`--profile r0`, and refuses to start from a copy of the repo that is too old to recompute
+BatchNorm statistics before evaluation (§12):
 
 ```bash
 bash ~/mocid-scripts/train.sh base-jane-1 --model MOCIDBase
@@ -297,6 +298,7 @@ R0 (`results/R0`), which the team uses as the reference for all new work. They l
 | EMA | 0.9999 (stage 2: 0.999); evaluation and checkpoints use the EMA weights |
 | What trains in stage 2 | the DAM, FPN and head; the backbone is frozen |
 | Evaluation | every 2 epochs, on the 4,767 validation frames |
+| BatchNorm statistics | recomputed from 300 training batches before every evaluation, for the model being evaluated (§12) |
 | Metric | VOC all-points AP50 at IoU 0.5, and F1 at the best confidence threshold |
 | Best checkpoint | by AP50; from epoch 40 in stage 1 and in the one-stage models, from the start in stage 2 |
 
@@ -344,6 +346,10 @@ cd ~/IRSTD-Methods-master/MOCID
 /srv/proj-mamba/venv/bin/python main.py --profile r0 --model MOCIDBaseFISTA eval \
     --ckpt runs/<tag>/best.pth --perseq
 ```
+
+**Checkpoints saved before 1 Oct 2026** (R0's, for example) have stale BatchNorm statistics.
+Add `--recal-bn 300` to `eval` to score them the way training now does; R0's stage-1
+checkpoint scores 88.65 as saved and 89.55 recomputed.
 
 When you report a run, give both the best and the final epoch. The best epoch is chosen on
 the validation set, so on its own it is optimistic.
@@ -397,6 +403,8 @@ git push origin main
 | `progress.sh` empty after 20+ minutes | another job is using the GPU (§6) |
 | A new run starts at epoch 20, not 1 | the tag was used before, so it resumed; pick a new tag |
 | `CUDA out of memory` | someone else is using most of the GPU memory; check `nvidia-smi` |
+| `train.sh` says your copy of the repo is out of date | it predates the BatchNorm fix (§12); update it (§3) |
+| A run's first log line doesn't say `BatchNorm recomputed before eval: 300 batches` | your repo copy is out of date, or `BN_RECAL_BATCHES` was changed in `config.py`; every team run should have it |
 | `RuntimeError: ... iostream error` or `unexpected pos` when saving, or `No space left on device` | a full disk, usually `/home` (`df -h /home`). Make sure `MOCID/runs` points to `/srv/proj-mamba/runs/<your ID>` (§5) and clear out old files in your home directory |
 
 ## 12. Notes on the pipeline
@@ -415,6 +423,17 @@ installed. With the headers supplied by hand it does work for `MOCIDBase`, but w
 (0.111 against 0.114 s per step), and it fails on the full MOCID with a compiler error
 (`InductorError: ValueRangeError: Invalid ranges [0:-1]`). Results don't depend on it: R0
 ran without it.
+
+**BatchNorm statistics are recomputed before each evaluation.** Evaluation uses the EMA copy
+of the model, which averages its weights and its BatchNorm statistics separately. With R0's
+settings the weights move fast (LR 0.01, and weight decay shrinking the BatchNorm scales), so
+the averaged statistics stop matching the averaged weights, and evaluation can collapse while
+training is fine. That is what happened to R0 around epochs 10–25 (AP50 fell to 0.7 while the
+training loss kept falling). On a collapsed checkpoint, recomputing the statistics took AP50 from
+28.87 to 75.18. Since 1 Oct 2026, `train.py` recomputes them from 300 training batches before
+every evaluation (`BN_RECAL_BATCHES` in `config.py`; 0 turns it off), and saves the recomputed
+model as `best` / `final`. Training itself is unchanged. In stage 2 only the layers after the
+frozen backbone are recomputed.
 
 **How the numbers relate to the paper's.** Both use VOC AP50 at IoU 0.5, but the repo's loader
 evaluates 4,767 of the paper's 4,795 validation frames (§4), and several R0 settings are ones

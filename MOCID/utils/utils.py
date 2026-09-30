@@ -46,6 +46,60 @@ def strip_compile(sd):
     }
 
 
+def trainable_bn_names(model):
+    """-> names of the BatchNorm layers whose parameters are being trained (the ones
+    that update their running statistics during training)."""
+    raw = getattr(model, "_orig_mod", model)
+    return {
+        n
+        for n, m in raw.named_modules()
+        if isinstance(m, torch.nn.modules.batchnorm._BatchNorm)
+        and m.weight is not None
+        and m.weight.requires_grad
+    }
+
+
+@torch.no_grad()
+def recalibrate_bn(model, loader, device, use_dam, num_batches, names=None):
+    """Recompute BatchNorm running statistics from training batches, in place. -> model.
+
+    The EMA copy averages its weights and its BatchNorm running statistics separately,
+    so when the weights move quickly (high LR, weight decay on the BatchNorm scales, as in
+    the R0 profile) the averaged statistics stop matching the averaged weights, and
+    evaluation collapses although training is fine (28.87 -> 75.18 AP50 on a collapsed
+    run once recomputed). Recomputing them for the evaluated weights removes the
+    mismatch; it changes nothing about training (torch.optim.swa_utils.update_bn does
+    the same for averaged weights).
+
+    names: only these BatchNorm layers (default: all). Stage 2 passes the trainable
+    ones, since the frozen backbone runs in eval mode during training.
+    """
+    bns = [
+        m
+        for n, m in model.named_modules()
+        if isinstance(m, torch.nn.modules.batchnorm._BatchNorm) and (names is None or n in names)
+    ]
+    if not bns or num_batches <= 0:
+        return model
+    was_training = model.training
+    momenta = [m.momentum for m in bns]
+    for m in bns:
+        m.reset_running_stats()
+        m.momentum = None  # cumulative average over all the batches below
+    model.eval()
+    for m in bns:
+        m.train()  # only these layers update their statistics
+    for i, (clip, _labels) in enumerate(loader):
+        if i >= num_batches:
+            break
+        with torch.amp.autocast("cuda"):
+            model(clip.to(device, non_blocking=True), use_dam=use_dam)
+    for m, mom in zip(bns, momenta):
+        m.momentum = mom
+    model.train(was_training)
+    return model
+
+
 def save_ckpt(path, model, opt, sched, ep, stage, tag, ap50=None, ema=None):
     """Write a checkpoint atomically (.tmp then rename). -> None."""
     torch.save(

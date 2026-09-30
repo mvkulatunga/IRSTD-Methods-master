@@ -1,6 +1,7 @@
 import getpass
 import os
 import time
+from copy import deepcopy
 
 import torch
 from torch.utils.data import DataLoader
@@ -14,9 +15,11 @@ from utils.utils import (
     filtered_load,
     load_checkpoint,
     log_eval,
+    recalibrate_bn,
     save_ckpt,
     set_stage,
     strip_compile,
+    trainable_bn_names,
 )
 
 from utils.data import MOCIDDataset, collate_eval, collate_train
@@ -95,8 +98,12 @@ def run_stage(
     track_best_after=0,
     strides=(8, 16, 32),
     num_classes=1,
+    bn_recal_batches=0,
 ):
-    """One training stage; all artifacts land in out_dir. -> None."""
+    """One training stage; all artifacts land in out_dir. -> None.
+
+    bn_recal_batches > 0: evaluate (and save as best/final) a copy of the EMA model
+    whose BatchNorm statistics are recomputed from that many training batches."""
     os.makedirs(out_dir, exist_ok=True)
     ckpt_path = os.path.join(out_dir, ckpt_path)
     csv_path = os.path.join(out_dir, csv_path)
@@ -106,6 +113,17 @@ def run_stage(
         best_path = os.path.join(out_dir, best_path)
 
     scaler = torch.amp.GradScaler("cuda")
+    bn_names = trainable_bn_names(model)  # stage 2: the frozen backbone's BN stays as is
+
+    def model_to_evaluate():
+        """The EMA model (or the live one), with BatchNorm statistics recomputed if enabled."""
+        target = ema.ema if ema is not None else getattr(model, "_orig_mod", model)
+        if bn_recal_batches <= 0:
+            return target
+        target = recalibrate_bn(
+            deepcopy(target), loader, device, use_dam, bn_recal_batches, bn_names
+        )
+        return target.eval()
 
     # carry the previous best forward so a resumed run doesn't overwrite it
     best_ap50 = -1.0
@@ -117,6 +135,7 @@ def run_stage(
         except Exception as e:
             print(f"[warn] could not read best ckpt ({e})")
 
+    eval_target = None
     for ep in range(start_ep, epochs):
         model.train()
         if use_dam:
@@ -167,8 +186,9 @@ def run_stage(
         if (ep + 1) % ckpt_every == 0 or (ep + 1) == epochs:
             save_ckpt(ckpt_path, model, opt, sched, ep, stage, tag, ema=ema)
 
+        eval_target = None
         if do_eval and ((ep + 1) % eval_every == 0 or (ep + 1) == epochs):
-            eval_target = ema.ema if ema is not None else model
+            eval_target = model_to_evaluate()
             ap50, f1 = evaluate(
                 eval_target,
                 val_loader,
@@ -212,7 +232,8 @@ def run_stage(
                 print(f"[{tag}] (best tracking starts after epoch {track_best_after})")
 
     if final_path is not None:
-        deploy = ema.ema if ema is not None else model
+        # the last epoch was just evaluated if evaluation is on; reuse that model
+        deploy = eval_target if eval_target is not None else model_to_evaluate()
         save_ckpt(final_path, deploy, opt, sched, epochs - 1, stage, tag, ema=ema)
         print(f"[{tag}] saved stage checkpoint -> {final_path}")
 
@@ -305,6 +326,7 @@ def train_mocid(
             track_best_after=cfg.TRACK_BEST_AFTER,
             strides=cfg.STRIDES,
             num_classes=cfg.NUM_CLASSES,
+            bn_recal_batches=cfg.BN_RECAL_BATCHES,
         )
     elif not stage1_ckpt:
         print(f"[train] stage 1 already complete ({s1_start} epochs)")
@@ -346,6 +368,7 @@ def train_mocid(
             ema=ema,
             strides=cfg.STRIDES,
             num_classes=cfg.NUM_CLASSES,
+            bn_recal_batches=cfg.BN_RECAL_BATCHES,
         )
     else:
         print(f"[train] stage 2 already complete ({s2_start} epochs)")
@@ -404,6 +427,7 @@ def train_single_stage(
             track_best_after=cfg.TRACK_BEST_AFTER,
             strides=cfg.STRIDES,
             num_classes=cfg.NUM_CLASSES,
+            bn_recal_batches=cfg.BN_RECAL_BATCHES,
         )
     else:
         print(f"[train] already complete ({start} epochs)")

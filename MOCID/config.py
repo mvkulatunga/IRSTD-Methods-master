@@ -33,6 +33,8 @@ PROFILES = {
         "TRACK_BEST_AFTER": 40,
         "NORMALISE": "255",
         "DECAY_ALL": True,
+        # not an R0 setting: evaluation-only, and part of the team standard since 1 Oct 2026
+        "BN_RECAL_BATCHES": 300,
     },
 }
 
@@ -67,6 +69,10 @@ class Config:
     NORMALISE = "imagenet"
     # False = no weight decay on 1-D parameters (BatchNorm, biases); True = decay everything
     DECAY_ALL = False
+    # before every evaluation, recompute the evaluated (EMA) model's BatchNorm statistics
+    # from this many training batches (utils.recalibrate_bn); 0 = off. Evaluation only:
+    # training is unaffected. Without it, R0-profile runs can show a false collapse.
+    BN_RECAL_BATCHES = 300
 
     STRIDES = [8, 16, 32]
     NUM_CLASSES = 1
