@@ -7,17 +7,14 @@ TIS  -> SP(1x2)/SP(2x1) + interleave(ref, target) -> X_W, X_H, each scanned in
         both directions and merged by addition
 """
 
-import sys
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from config import VMAMBA_PATH
+from config import add_dependency_paths
 
 # the selective-scan kernel lives in an external VMamba checkout
-if VMAMBA_PATH not in sys.path:
-    sys.path.append(VMAMBA_PATH)
+add_dependency_paths()
 from classification.models.csms6s import selective_scan_fn
 
 

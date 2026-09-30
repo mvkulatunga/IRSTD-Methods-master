@@ -1,3 +1,4 @@
+import getpass
 import os
 import time
 
@@ -5,6 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
+from config import SERVER_RUNS
 from model import MOCID
 from utils.utils import (
     ModelEMA,
@@ -21,12 +23,35 @@ from utils.data import MOCIDDataset, collate_eval, collate_train
 from utils.eval import evaluate
 
 
+def maybe_compile(model):
+    """torch.compile only when MOCID_COMPILE=1. It crashes on the lab server's
+    PyTorch/CUDA stack, so it is off by default. -> model (compiled or not)."""
+    if os.environ.get("MOCID_COMPILE") == "1":
+        return torch.compile(model)
+    return model
+
+
+def ensure_runs_dir():
+    """On the lab server, keep run outputs off the small /home volume shared by all
+    users: if ./runs doesn't exist yet, link it to /srv/proj-mamba/runs/<user>.
+    Does nothing elsewhere, or if ./runs already exists. -> None."""
+    if os.path.lexists("runs") or not os.path.isdir(SERVER_RUNS):
+        return
+    target = os.path.join(SERVER_RUNS, getpass.getuser())
+    os.makedirs(target, exist_ok=True)
+    os.symlink(target, "runs")
+    print(f"[train] runs/ -> {target}")
+
+
 def build_loaders(cfg):
     """cfg -> (train_loader, val_loader)."""
+    norm = getattr(cfg, "NORMALISE", "imagenet")
     train_ds = MOCIDDataset(
-        cfg.train_path, T=cfg.T, img_size=cfg.IMG_SIZE, is_train=True
+        cfg.train_path, T=cfg.T, img_size=cfg.IMG_SIZE, is_train=True, norm=norm
     )
-    val_ds = MOCIDDataset(cfg.val_path, T=cfg.T, img_size=cfg.IMG_SIZE, is_train=False)
+    val_ds = MOCIDDataset(
+        cfg.val_path, T=cfg.T, img_size=cfg.IMG_SIZE, is_train=False, norm=norm
+    )
 
     train_loader = DataLoader(
         train_ds,
@@ -192,12 +217,18 @@ def run_stage(
         print(f"[{tag}] saved stage checkpoint -> {final_path}")
 
 
-def seed_from_fista_best(model, out_dir):
-    """Load the best stage-1 weights into the frozen backbone/pool/fpn/head. -> None."""
+def seed_from_fista_best(model, out_dir, stage1_ckpt=None):
+    """Load the best stage-1 weights into the frozen backbone/pool/fpn/head. -> None.
+
+    stage1_ckpt: an explicit stage-1 checkpoint to seed from instead of out_dir's."""
     # the backbone is frozen for all of stage 2, so it must start from the BEST
     # stage-1 weights rather than whatever the last epoch happened to leave behind
-    for name, kind in (("fista_best.pth", "best"), ("fista.pth", "final (fallback)")):
-        path = os.path.join(out_dir, name)
+    candidates = (
+        [(stage1_ckpt, "given")]
+        if stage1_ckpt
+        else [(os.path.join(out_dir, n), k) for n, k in (("fista_best.pth", "best"), ("fista.pth", "final (fallback)"))]
+    )
+    for path, kind in candidates:
         if os.path.exists(path):
             ck = torch.load(path, map_location="cpu")
             # drop disp.* so the zero-init DAM branch survives untouched
@@ -217,12 +248,17 @@ def seed_from_fista_best(model, out_dir):
 
 
 def train_mocid(
-    cfg, device, tag="default", train_loader=None, val_loader=None, do_eval=True
+    cfg, device, tag="default", train_loader=None, val_loader=None, do_eval=True,
+    stage1_ckpt=None,
 ):
-    """Two-stage training with auto-resume from runs/<tag>/. -> the trained model."""
-    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]).to(device)
-    model = torch.compile(model)
+    """Two-stage training with auto-resume from runs/<tag>/. -> the trained model.
 
+    stage1_ckpt: skip stage 1 and run stage 2 only, seeded from this stage-1
+    checkpoint (e.g. runs/server-r0/fista_best.pth)."""
+    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]).to(device)
+    model = maybe_compile(model)
+
+    ensure_runs_dir()
     out_dir = os.path.join("runs", tag)
     os.makedirs(out_dir, exist_ok=True)
     print(f"[train] artifacts -> {out_dir}/")
@@ -232,12 +268,18 @@ def train_mocid(
 
     # ---------------- stage 1: FISTA backbone ----------------
     print("=" * 25, "STAGE 1: FISTA", "=" * 25)
-    set_stage(model, 1)
-    opt, sched = build_optimizer(model, cfg, cfg.EPOCHS_SPTBACKBONE)
-    ema = ModelEMA(model)
-    s1_start = load_checkpoint(
-        os.path.join(out_dir, "fista_last.pth"), model, opt, sched, ema
-    )
+    if stage1_ckpt:
+        if not os.path.exists(stage1_ckpt):
+            raise FileNotFoundError(stage1_ckpt)
+        print(f"[train] stage 1 skipped: stage 2 seeds from {stage1_ckpt}")
+        s1_start = cfg.EPOCHS_SPTBACKBONE
+    else:
+        set_stage(model, 1)
+        opt, sched = build_optimizer(model, cfg, cfg.EPOCHS_SPTBACKBONE)
+        ema = ModelEMA(model)
+        s1_start = load_checkpoint(
+            os.path.join(out_dir, "fista_last.pth"), model, opt, sched, ema
+        )
 
     if s1_start < cfg.EPOCHS_SPTBACKBONE:
         run_stage(
@@ -264,7 +306,7 @@ def train_mocid(
             strides=cfg.STRIDES,
             num_classes=cfg.NUM_CLASSES,
         )
-    else:
+    elif not stage1_ckpt:
         print(f"[train] stage 1 already complete ({s1_start} epochs)")
 
     # ---------------- stage 2: freeze FISTA, train DAM ----------------
@@ -272,7 +314,7 @@ def train_mocid(
     set_stage(model, 2)
 
     # runs before ModelEMA so the shadow copy also starts from the best backbone
-    seed_from_fista_best(model, out_dir)
+    seed_from_fista_best(model, out_dir, stage1_ckpt)
 
     opt, sched = build_optimizer(model, cfg, cfg.EPOCHS_DAM, lr=cfg.LR_DAM)
     # fast EMA: a fresh disp branch must be tracked, not smoothed over ~10k updates
@@ -307,5 +349,63 @@ def train_mocid(
         )
     else:
         print(f"[train] stage 2 already complete ({s2_start} epochs)")
+
+    return model
+
+
+def train_single_stage(
+    cfg, device, model_cls, label, tag="default", train_loader=None, val_loader=None,
+    do_eval=True,
+):
+    """One-stage training of a model without a DAM (the ablation models in base.py and
+    base_fista.py), with auto-resume from runs/<tag>/. Same loop, schedule, EMA and
+    evaluation as MOCID's stage 1; every parameter is trained. -> the trained model.
+
+    label: short name for the eval_log.csv rows, e.g. "base" -> tag "<tag>-base"."""
+    model = model_cls(
+        num_classes=cfg.NUM_CLASSES, num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]
+    ).to(device)
+    model = maybe_compile(model)
+
+    ensure_runs_dir()
+    out_dir = os.path.join("runs", tag)
+    os.makedirs(out_dir, exist_ok=True)
+    print(f"[train] {model_cls.__name__}, artifacts -> {out_dir}/")
+
+    if train_loader is None:
+        train_loader, val_loader = build_loaders(cfg)
+
+    epochs = cfg.EPOCHS_SPTBACKBONE
+    opt, sched = build_optimizer(model, cfg, epochs)
+    ema = ModelEMA(model)
+    start = load_checkpoint(os.path.join(out_dir, "last.pth"), model, opt, sched, ema)
+
+    if start < epochs:
+        run_stage(
+            model,
+            train_loader,
+            val_loader,
+            opt,
+            sched,
+            epochs,
+            device,
+            use_dam=False,
+            tag=f"{tag}-{label}",
+            stage=1,
+            out_dir=out_dir,
+            start_ep=start,
+            ckpt_path="last.pth",
+            final_path="final.pth",
+            best_path="best.pth",
+            csv_path="eval_log.csv",
+            eval_every=cfg.EVAL_EVERY,
+            do_eval=do_eval,
+            ema=ema,
+            track_best_after=cfg.TRACK_BEST_AFTER,
+            strides=cfg.STRIDES,
+            num_classes=cfg.NUM_CLASSES,
+        )
+    else:
+        print(f"[train] already complete ({start} epochs)")
 
     return model

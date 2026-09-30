@@ -1,7 +1,11 @@
 import torch
 import torch.nn as nn
 
-from detectors.registry import register_module
+try:
+    from detectors.registry import register_module
+except ImportError:  # outside the mamba-experiments harness (e.g. main.py): nothing to register with
+    def register_module(cls):
+        return cls
 
 from components.components import FPN, FISTALayer, YOLOXHead
 from components.yolox.darknet import CSPDarknet
