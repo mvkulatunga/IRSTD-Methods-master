@@ -8,18 +8,41 @@ from config import Config, get_device, setup_torch
 from utils.data import MOCIDDataset, collate_eval
 from utils.eval import evaluate
 from model import MOCID
-from train import train_mocid
+from base import MOCIDBase
+from base_fista import MOCIDBaseFISTA
+from train import train_mocid, train_single_stage
 from utils.utils import count_params_m, strip_compile
+
+# the paper's Table 2 rows: Base, +FISTA, and the full model (+FISTA+DAM, two stages)
+MODELS = {"MOCID": MOCID, "MOCIDBase": MOCIDBase, "MOCIDBaseFISTA": MOCIDBaseFISTA}
+LABELS = {"MOCIDBase": "base", "MOCIDBaseFISTA": "basefista"}  # eval_log.csv row tags
 
 
 def parse_args():
     """-> parsed CLI namespace."""
     ap = argparse.ArgumentParser(description="MOCID train / eval / param count")
+    ap.add_argument(
+        "--profile",
+        default=None,
+        help="settings profile from config.PROFILES, e.g. r0 (default: MOCID_PROFILE, else none)",
+    )
+    ap.add_argument(
+        "--model",
+        choices=sorted(MODELS),
+        default="MOCID",
+        help="MOCID (two stages: FISTA backbone, then DAM), or the one-stage ablation "
+        "models MOCIDBase / MOCIDBaseFISTA (default: MOCID)",
+    )
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    p_train = sub.add_parser("train", help="two-stage training with auto-resume")
+    p_train = sub.add_parser("train", help="training with auto-resume from runs/<tag>/")
     p_train.add_argument("--tag", default="default")
     p_train.add_argument("--no-eval", dest="do_eval", action="store_false")
+    p_train.add_argument(
+        "--stage1-from",
+        default=None,
+        help="skip stage 1 and train stage 2 (DAM) from this stage-1 checkpoint",
+    )
     p_train.set_defaults(do_eval=True)
 
     p_eval = sub.add_parser("eval", help="AP50 / best-F1 on the val split")
@@ -41,9 +64,9 @@ def parse_args():
     return ap.parse_args()
 
 
-def build_model(cfg, device):
-    """-> MOCID on device."""
-    return MOCID(
+def build_model(cfg, device, name="MOCID"):
+    """-> the model called name (a key of MODELS) on device."""
+    return MODELS[name](
         num_classes=cfg.NUM_CLASSES, num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]
     ).to(device)
 
@@ -55,26 +78,36 @@ def load_weights(model, ckpt_path):
     return ckpt.get("stage", 2)
 
 
-def print_params(model):
-    """Print param counts for both configurations. -> None."""
+def print_params(model, name="MOCID"):
+    """Print param counts (both configurations for MOCID). -> None."""
+    if name != "MOCID":
+        print(f"Params  {name:22s}: {count_params_m(model, True):.2f} M")
+        return
     print(f"Params  .+FISTA (no DAM)      : {count_params_m(model, False):.2f} M")
     print(f"Params  .+FISTA+DAM (MOCID)   : {count_params_m(model, True):.2f} M")
 
 
 def cmd_eval(args, cfg, device):
     """Load a checkpoint and report AP50 / best-F1. -> None."""
-    model = build_model(cfg, device)
+    model = build_model(cfg, device, args.model)
     stage = load_weights(model, args.ckpt)
 
-    # --dam/--no-dam overrides; otherwise the branch follows the checkpoint's stage
+    # --dam/--no-dam overrides; otherwise the branch follows the checkpoint's stage.
+    # The ablation models have no DAM, so it stays off for them.
     use_dam = args.dam if args.dam is not None else (stage == 2)
-    print(f"loaded {args.ckpt}  (stage={stage})  ->  use_dam={use_dam}")
-    print_params(model)
+    use_dam = use_dam and args.model == "MOCID"
+    print(f"loaded {args.ckpt}  ({args.model}, stage={stage})  ->  use_dam={use_dam}")
+    print_params(model, args.model)
 
-    val_ds = MOCIDDataset(cfg.val_path, T=cfg.T, img_size=cfg.IMG_SIZE, is_train=False)
+    val_ds = MOCIDDataset(
+        cfg.val_path, T=cfg.T, img_size=cfg.IMG_SIZE, is_train=False, norm=cfg.NORMALISE
+    )
     assert len(val_ds) > 0, f"Val set empty — check {cfg.val_path} (cwd={os.getcwd()})"
 
-    row = ".+FISTA+DAM (MOCID)" if use_dam else ".+FISTA"
+    if args.model == "MOCID":
+        row = ".+FISTA+DAM (MOCID)" if use_dam else ".+FISTA (MOCID, DAM off)"
+    else:
+        row = args.model
     print(f"\n=== {row} ===")
 
     if args.perseq:
@@ -117,19 +150,32 @@ def cmd_eval(args, cfg, device):
 
 def main():
     setup_torch()
-    cfg = Config()
-    device = get_device()
     args = parse_args()
+    cfg = Config(args.profile)
+    device = get_device()
+    print(f"[config] profile: {cfg.PROFILE}  (LR {cfg.LR_INIT} -> {cfg.MIN_LR}, "
+          f"input {cfg.NORMALISE}, decay on all params: {cfg.DECAY_ALL})")
 
     if args.cmd == "train":
-        train_mocid(cfg, device, tag=args.tag, do_eval=args.do_eval)
+        if args.model == "MOCID":
+            train_mocid(
+                cfg, device, tag=args.tag, do_eval=args.do_eval,
+                stage1_ckpt=args.stage1_from,
+            )
+        else:
+            if args.stage1_from:
+                raise SystemExit(f"--stage1-from is for MOCID's stage 2; {args.model} has one stage")
+            train_single_stage(
+                cfg, device, MODELS[args.model], LABELS[args.model], tag=args.tag,
+                do_eval=args.do_eval,
+            )
     elif args.cmd == "eval":
         cmd_eval(args, cfg, device)
     elif args.cmd == "params":
-        model = build_model(cfg, device)
+        model = build_model(cfg, device, args.model)
         if args.ckpt:
             load_weights(model, args.ckpt)
-        print_params(model)
+        print_params(model, args.model)
 
 
 if __name__ == "__main__":

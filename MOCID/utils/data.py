@@ -18,11 +18,14 @@ IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 class MOCIDDataset(Dataset):
     """T-frame clips from an annotation file; the last frame carries the labels."""
 
-    def __init__(self, annotations_file, T=5, img_size=(512, 512), is_train=True):
-        """annotations_file lines are '<img_path> xmin,ymin,xmax,ymax,cls [...]'."""
+    def __init__(self, annotations_file, T=5, img_size=(512, 512), is_train=True, norm="imagenet"):
+        """annotations_file lines are '<img_path> xmin,ymin,xmax,ymax,cls [...]'.
+        norm: "imagenet" = /255 then ImageNet mean/std; "255" = /255 only (the R0 profile)."""
+        assert norm in ("imagenet", "255"), norm
         self.T = T
         self.img_size = img_size
         self.is_train = is_train
+        self.norm = norm
         self.clips = []
 
         if not os.path.exists(annotations_file):
@@ -102,7 +105,8 @@ class MOCIDDataset(Dataset):
             if do_flip:
                 img = cv2.flip(img, 1)
             img = img.astype(np.float32) / 255.0
-            img = (img - IMAGENET_MEAN) / IMAGENET_STD
+            if self.norm == "imagenet":
+                img = (img - IMAGENET_MEAN) / IMAGENET_STD
             imgs.append(np.transpose(img, (2, 0, 1)))
 
         imgs_tensor = torch.tensor(np.array(imgs), dtype=torch.float32)

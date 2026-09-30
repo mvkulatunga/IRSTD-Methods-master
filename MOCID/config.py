@@ -1,6 +1,40 @@
 import os
+import sys
 
 import torch
+
+
+# ---- lab server defaults -------------------------------------------------- #
+# On the lab server (pl-lawr7615) the dependencies, DAUB splits and a place for run
+# outputs are in shared folders, so main.py runs with no environment set up. On any
+# other machine these folders don't exist and the previous defaults apply; environment
+# variables (MOCID_TRAIN_PATH, MOCID_VAL_PATH, VMAMBA_PATH, PYTHONPATH) override both.
+SERVER_DIR = "/srv/proj-mamba/mocid-baseline"
+SERVER_RUNS = "/srv/proj-mamba/runs"
+ON_SERVER = os.path.isdir(SERVER_DIR)
+_SERVER_SPLITS = {
+    "DAUB": (
+        f"{SERVER_DIR}/splits/daub_train_server.txt",
+        f"{SERVER_DIR}/splits/daub_val_server.txt",
+    ),
+}
+
+
+# Named settings profiles, selected with `main.py --profile <name>` or MOCID_PROFILE=<name>.
+# Each entry overrides the Config defaults below.
+PROFILES = {
+    # R0: the settings of the team's first full two-stage run (commit b82300f,
+    # results/R0), which the team uses as the reference for new work. Differs from
+    # the defaults in the unscaled LR, /255-only input, weight decay on every
+    # parameter, and best-checkpoint tracking from epoch 40 in stage 1.
+    "r0": {
+        "LR_INIT": 0.01,
+        "MIN_LR": 1e-4,
+        "TRACK_BEST_AFTER": 40,
+        "NORMALISE": "255",
+        "DECAY_ALL": True,
+    },
+}
 
 
 class Config:
@@ -29,6 +63,10 @@ class Config:
     # with no checkpoint saved to fall back on. Track from the start so a good
     # early result is never silently lost again.
     TRACK_BEST_AFTER = 0
+    # input normalisation: "imagenet" = /255 then ImageNet mean/std; "255" = /255 only
+    NORMALISE = "imagenet"
+    # False = no weight decay on 1-D parameters (BatchNorm, biases); True = decay everything
+    DECAY_ALL = False
 
     STRIDES = [8, 16, 32]
     NUM_CLASSES = 1
@@ -37,7 +75,8 @@ class Config:
     # Override from the environment (Colab / CI). MOCID_DATASET selects a
     # built-in split pair under MOCID_DATA_ROOT; MOCID_TRAIN_PATH /
     # MOCID_VAL_PATH override the annotation files directly. Default is DAUB
-    # (the reproduction targets the DAUB ablation ladder first).
+    # (the reproduction targets the DAUB ablation ladder first); on the lab server
+    # the default is the shared DAUB split, unless MOCID_DATA_ROOT is set.
     DATASET = os.environ.get("MOCID_DATASET", "DAUB").upper()
     DATA_ROOT = os.environ.get("MOCID_DATA_ROOT", "../../datasets")
 
@@ -48,13 +87,22 @@ class Config:
     assert DATASET in _SPLITS, (
         f"MOCID_DATASET must be one of {list(_SPLITS)}, got {DATASET!r}"
     )
+    if ON_SERVER and DATASET in _SERVER_SPLITS and "MOCID_DATA_ROOT" not in os.environ:
+        _default_splits = _SERVER_SPLITS[DATASET]
+    else:
+        _default_splits = tuple(os.path.join(DATA_ROOT, s) for s in _SPLITS[DATASET])
 
-    train_path = os.environ.get(
-        "MOCID_TRAIN_PATH", os.path.join(DATA_ROOT, _SPLITS[DATASET][0])
-    )
-    val_path = os.environ.get(
-        "MOCID_VAL_PATH", os.path.join(DATA_ROOT, _SPLITS[DATASET][1])
-    )
+    train_path = os.environ.get("MOCID_TRAIN_PATH", _default_splits[0])
+    val_path = os.environ.get("MOCID_VAL_PATH", _default_splits[1])
+
+    def __init__(self, profile=None):
+        """profile: a key of PROFILES, or None for MOCID_PROFILE (default: no profile)."""
+        self.PROFILE = profile or os.environ.get("MOCID_PROFILE", "default")
+        if self.PROFILE != "default":
+            if self.PROFILE not in PROFILES:
+                raise ValueError(f"unknown profile {self.PROFILE!r}; choose from {list(PROFILES)}")
+            for k, v in PROFILES[self.PROFILE].items():
+                setattr(self, k, v)
 
 
 def get_device():
@@ -68,4 +116,17 @@ def setup_torch():
 
 
 # VMamba checkout that provides the selective-scan kernel used by dam.py
-VMAMBA_PATH = os.environ.get("VMAMBA_PATH", "/content/VMamba")
+VMAMBA_PATH = os.environ.get(
+    "VMAMBA_PATH", f"{SERVER_DIR}/deps/VMamba" if ON_SERVER else "/content/VMamba"
+)
+
+
+def add_dependency_paths():
+    """Make VMamba importable for dam.py, and on the lab server also the prebuilt
+    selective-scan CUDA kernel and fvcore (which VMamba imports). -> None."""
+    paths = [VMAMBA_PATH]
+    if ON_SERVER:
+        paths = [f"{SERVER_DIR}/deps/ss-kernel", f"{SERVER_DIR}/deps/python-deps"] + paths
+    for p in paths:
+        if p not in sys.path:
+            sys.path.append(p)

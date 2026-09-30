@@ -130,16 +130,17 @@ def build_optimizer(model, cfg, epochs, lr=None):
 
     Weight decay excludes BatchNorm scale/bias and every bias term (any 1-D
     parameter) -- matches official YOLOX's own optimizer setup. Decaying those
-    tends to hurt rather than help; previously this applied uniform decay to
-    every parameter.
+    tends to hurt rather than help. cfg.DECAY_ALL (the R0 profile) restores the
+    original behaviour: uniform decay on every parameter.
     """
     lr = cfg.LR_INIT if lr is None else lr
+    decay_all = getattr(cfg, "DECAY_ALL", False)
 
     decay, no_decay = [], []
     for p in model.parameters():
         if not p.requires_grad:  # skips frozen stages
             continue
-        (no_decay if p.ndim <= 1 else decay).append(p)
+        (no_decay if p.ndim <= 1 and not decay_all else decay).append(p)
 
     opt = torch.optim.SGD(
         [
