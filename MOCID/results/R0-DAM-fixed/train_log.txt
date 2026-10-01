@@ -1,0 +1,162 @@
+[config] profile: r0  (LR 0.01 -> 0.0001, input 255, decay on all params: True)
+[train] artifacts -> runs/r0-dam-refres/
+========================= STAGE 1: FISTA =========================
+[train] stage 1 skipped: stage 2 seeds from runs/server-r0/fista_best.pth
+========================= STAGE 2: DAM =========================
+[stage2] seeded from FISTA given: runs/server-r0/fista_best.pth  (disp.* kept at zero-init; 0 non-matching keys skipped)
+[r0-dam-refres-dam] 1/100  loss 0.8998  lr 3.33e-04
+[r0-dam-refres-dam] 2/100  loss 0.9293  lr 5.00e-04
+[r0-dam-refres-dam] eval @ ep2: AP50 89.12  F1 90.02
+[r0-dam-refres-dam] *** new best AP50 89.12 -> runs/r0-dam-refres/dam_best.pth
+[r0-dam-refres-dam] 3/100  loss 0.9597  lr 6.67e-04
+[r0-dam-refres-dam] 4/100  loss 0.9829  lr 8.33e-04
+[r0-dam-refres-dam] eval @ ep4: AP50 88.76  F1 90.07
+[r0-dam-refres-dam] 5/100  loss 1.0152  lr 1.00e-03
+[r0-dam-refres-dam] 6/100  loss 1.0331  lr 1.00e-03
+[r0-dam-refres-dam] eval @ ep6: AP50 89.52  F1 90.38
+[r0-dam-refres-dam] *** new best AP50 89.52 -> runs/r0-dam-refres/dam_best.pth
+[r0-dam-refres-dam] 7/100  loss 1.0333  lr 1.00e-03
+[r0-dam-refres-dam] 8/100  loss 1.0235  lr 9.99e-04
+[r0-dam-refres-dam] eval @ ep8: AP50 89.44  F1 90.33
+[r0-dam-refres-dam] 9/100  loss 1.0284  lr 9.98e-04
+[r0-dam-refres-dam] 10/100  loss 1.0292  lr 9.96e-04
+[r0-dam-refres-dam] eval @ ep10: AP50 89.17  F1 90.35
+[r0-dam-refres-dam] 11/100  loss 1.0210  lr 9.94e-04
+[r0-dam-refres-dam] 12/100  loss 1.0276  lr 9.91e-04
+[r0-dam-refres-dam] eval @ ep12: AP50 89.67  F1 90.50
+[r0-dam-refres-dam] *** new best AP50 89.67 -> runs/r0-dam-refres/dam_best.pth
+[r0-dam-refres-dam] 13/100  loss 1.0202  lr 9.88e-04
+[r0-dam-refres-dam] 14/100  loss 1.0232  lr 9.84e-04
+[r0-dam-refres-dam] eval @ ep14: AP50 89.09  F1 89.95
+[r0-dam-refres-dam] 15/100  loss 1.0200  lr 9.80e-04
+[r0-dam-refres-dam] 16/100  loss 1.0232  lr 9.75e-04
+[r0-dam-refres-dam] eval @ ep16: AP50 89.50  F1 90.43
+[r0-dam-refres-dam] 17/100  loss 1.0053  lr 9.70e-04
+[r0-dam-refres-dam] 18/100  loss 1.0132  lr 9.64e-04
+[r0-dam-refres-dam] eval @ ep18: AP50 89.56  F1 90.50
+[r0-dam-refres-dam] 19/100  loss 1.0111  lr 9.58e-04
+[r0-dam-refres-dam] 20/100  loss 1.0041  lr 9.52e-04
+[r0-dam-refres-dam] eval @ ep20: AP50 89.98  F1 90.40
+[r0-dam-refres-dam] *** new best AP50 89.98 -> runs/r0-dam-refres/dam_best.pth
+[r0-dam-refres-dam] 21/100  loss 0.9961  lr 9.45e-04
+[r0-dam-refres-dam] 22/100  loss 1.0006  lr 9.37e-04
+[r0-dam-refres-dam] eval @ ep22: AP50 89.67  F1 90.27
+[r0-dam-refres-dam] 23/100  loss 1.0025  lr 9.29e-04
+[r0-dam-refres-dam] 24/100  loss 0.9968  lr 9.21e-04
+[r0-dam-refres-dam] eval @ ep24: AP50 89.51  F1 90.21
+[r0-dam-refres-dam] 25/100  loss 0.9949  lr 9.12e-04
+[r0-dam-refres-dam] 26/100  loss 0.9929  lr 9.03e-04
+[r0-dam-refres-dam] eval @ ep26: AP50 89.56  F1 90.46
+[r0-dam-refres-dam] 27/100  loss 0.9860  lr 8.94e-04
+[r0-dam-refres-dam] 28/100  loss 0.9936  lr 8.84e-04
+[r0-dam-refres-dam] eval @ ep28: AP50 89.61  F1 90.26
+[r0-dam-refres-dam] 29/100  loss 0.9817  lr 8.73e-04
+[r0-dam-refres-dam] 30/100  loss 0.9815  lr 8.63e-04
+[r0-dam-refres-dam] eval @ ep30: AP50 89.35  F1 90.39
+[r0-dam-refres-dam] 31/100  loss 0.9877  lr 8.52e-04
+[r0-dam-refres-dam] 32/100  loss 0.9764  lr 8.41e-04
+[r0-dam-refres-dam] eval @ ep32: AP50 89.41  F1 90.35
+[r0-dam-refres-dam] 33/100  loss 0.9763  lr 8.29e-04
+[r0-dam-refres-dam] 34/100  loss 0.9793  lr 8.17e-04
+[r0-dam-refres-dam] eval @ ep34: AP50 89.27  F1 90.29
+[r0-dam-refres-dam] 35/100  loss 0.9733  lr 8.05e-04
+[r0-dam-refres-dam] 36/100  loss 0.9627  lr 7.92e-04
+[r0-dam-refres-dam] eval @ ep36: AP50 89.64  F1 90.07
+[r0-dam-refres-dam] 37/100  loss 0.9599  lr 7.79e-04
+[r0-dam-refres-dam] 38/100  loss 0.9607  lr 7.66e-04
+[r0-dam-refres-dam] eval @ ep38: AP50 89.52  F1 90.23
+[r0-dam-refres-dam] 39/100  loss 0.9616  lr 7.53e-04
+[r0-dam-refres-dam] 40/100  loss 0.9648  lr 7.39e-04
+[r0-dam-refres-dam] eval @ ep40: AP50 89.96  F1 90.44
+[r0-dam-refres-dam] 41/100  loss 0.9496  lr 7.26e-04
+[r0-dam-refres-dam] 42/100  loss 0.9494  lr 7.12e-04
+[r0-dam-refres-dam] eval @ ep42: AP50 89.53  F1 90.16
+[r0-dam-refres-dam] 43/100  loss 0.9499  lr 6.98e-04
+[r0-dam-refres-dam] 44/100  loss 0.9429  lr 6.83e-04
+[r0-dam-refres-dam] eval @ ep44: AP50 89.56  F1 90.44
+[r0-dam-refres-dam] 45/100  loss 0.9429  lr 6.69e-04
+[r0-dam-refres-dam] 46/100  loss 0.9294  lr 6.54e-04
+[r0-dam-refres-dam] eval @ ep46: AP50 89.64  F1 90.41
+[r0-dam-refres-dam] 47/100  loss 0.9268  lr 6.40e-04
+[r0-dam-refres-dam] 48/100  loss 0.9259  lr 6.25e-04
+[r0-dam-refres-dam] eval @ ep48: AP50 89.53  F1 90.13
+[r0-dam-refres-dam] 49/100  loss 0.9361  lr 6.10e-04
+[r0-dam-refres-dam] 50/100  loss 0.9239  lr 5.95e-04
+[r0-dam-refres-dam] eval @ ep50: AP50 89.58  F1 90.09
+[r0-dam-refres-dam] 51/100  loss 0.9190  lr 5.80e-04
+[r0-dam-refres-dam] 52/100  loss 0.9189  lr 5.65e-04
+[r0-dam-refres-dam] eval @ ep52: AP50 90.12  F1 90.21
+[r0-dam-refres-dam] *** new best AP50 90.12 -> runs/r0-dam-refres/dam_best.pth
+[r0-dam-refres-dam] 53/100  loss 0.9152  lr 5.50e-04
+[r0-dam-refres-dam] 54/100  loss 0.9051  lr 5.35e-04
+[r0-dam-refres-dam] eval @ ep54: AP50 89.78  F1 90.01
+[r0-dam-refres-dam] 55/100  loss 0.9015  lr 5.20e-04
+[r0-dam-refres-dam] 56/100  loss 0.8976  lr 5.05e-04
+[r0-dam-refres-dam] eval @ ep56: AP50 89.80  F1 89.95
+[r0-dam-refres-dam] 57/100  loss 0.8984  lr 4.90e-04
+[r0-dam-refres-dam] 58/100  loss 0.8989  lr 4.75e-04
+[r0-dam-refres-dam] eval @ ep58: AP50 89.36  F1 89.71
+[r0-dam-refres-dam] 59/100  loss 0.8928  lr 4.60e-04
+[r0-dam-refres-dam] 60/100  loss 0.8892  lr 4.46e-04
+[r0-dam-refres-dam] eval @ ep60: AP50 89.46  F1 89.91
+[r0-dam-refres-dam] 61/100  loss 0.8687  lr 4.31e-04
+[r0-dam-refres-dam] 62/100  loss 0.8776  lr 4.17e-04
+[r0-dam-refres-dam] eval @ ep62: AP50 89.42  F1 89.86
+[r0-dam-refres-dam] 63/100  loss 0.8644  lr 4.02e-04
+[r0-dam-refres-dam] 64/100  loss 0.8777  lr 3.88e-04
+[r0-dam-refres-dam] eval @ ep64: AP50 89.52  F1 90.06
+[r0-dam-refres-dam] 65/100  loss 0.8623  lr 3.74e-04
+[r0-dam-refres-dam] 66/100  loss 0.8569  lr 3.61e-04
+[r0-dam-refres-dam] eval @ ep66: AP50 89.35  F1 90.10
+[r0-dam-refres-dam] 67/100  loss 0.8547  lr 3.47e-04
+[r0-dam-refres-dam] 68/100  loss 0.8482  lr 3.34e-04
+[r0-dam-refres-dam] eval @ ep68: AP50 89.61  F1 90.02
+[r0-dam-refres-dam] 69/100  loss 0.8460  lr 3.21e-04
+[r0-dam-refres-dam] 70/100  loss 0.8429  lr 3.08e-04
+[r0-dam-refres-dam] eval @ ep70: AP50 89.52  F1 89.91
+[r0-dam-refres-dam] 71/100  loss 0.8340  lr 2.95e-04
+[r0-dam-refres-dam] 72/100  loss 0.8367  lr 2.83e-04
+[r0-dam-refres-dam] eval @ ep72: AP50 89.51  F1 89.87
+[r0-dam-refres-dam] 73/100  loss 0.8327  lr 2.71e-04
+[r0-dam-refres-dam] 74/100  loss 0.8273  lr 2.59e-04
+[r0-dam-refres-dam] eval @ ep74: AP50 89.54  F1 89.95
+[r0-dam-refres-dam] 75/100  loss 0.8192  lr 2.48e-04
+[r0-dam-refres-dam] 76/100  loss 0.8181  lr 2.37e-04
+[r0-dam-refres-dam] eval @ ep76: AP50 89.49  F1 89.98
+[r0-dam-refres-dam] 77/100  loss 0.8170  lr 2.27e-04
+[r0-dam-refres-dam] 78/100  loss 0.8211  lr 2.16e-04
+[r0-dam-refres-dam] eval @ ep78: AP50 89.67  F1 89.92
+[r0-dam-refres-dam] 79/100  loss 0.8081  lr 2.06e-04
+[r0-dam-refres-dam] 80/100  loss 0.8045  lr 1.97e-04
+[r0-dam-refres-dam] eval @ ep80: AP50 89.56  F1 90.12
+[r0-dam-refres-dam] 81/100  loss 0.7982  lr 1.88e-04
+[r0-dam-refres-dam] 82/100  loss 0.7945  lr 1.79e-04
+[r0-dam-refres-dam] eval @ ep82: AP50 89.39  F1 89.75
+[r0-dam-refres-dam] 83/100  loss 0.7932  lr 1.71e-04
+[r0-dam-refres-dam] 84/100  loss 0.7861  lr 1.63e-04
+[r0-dam-refres-dam] eval @ ep84: AP50 89.25  F1 89.73
+[r0-dam-refres-dam] 85/100  loss 0.7851  lr 1.55e-04
+[r0-dam-refres-dam] 86/100  loss 0.7822  lr 1.48e-04
+[r0-dam-refres-dam] eval @ ep86: AP50 89.46  F1 89.76
+[r0-dam-refres-dam] 87/100  loss 0.7780  lr 1.42e-04
+[r0-dam-refres-dam] 88/100  loss 0.7826  lr 1.36e-04
+[r0-dam-refres-dam] eval @ ep88: AP50 89.45  F1 89.83
+[r0-dam-refres-dam] 89/100  loss 0.7679  lr 1.30e-04
+[r0-dam-refres-dam] 90/100  loss 0.7693  lr 1.25e-04
+[r0-dam-refres-dam] eval @ ep90: AP50 89.42  F1 89.83
+[r0-dam-refres-dam] 91/100  loss 0.7655  lr 1.20e-04
+[r0-dam-refres-dam] 92/100  loss 0.7632  lr 1.16e-04
+[r0-dam-refres-dam] eval @ ep92: AP50 89.32  F1 89.45
+[r0-dam-refres-dam] 93/100  loss 0.7698  lr 1.12e-04
+[r0-dam-refres-dam] 94/100  loss 0.7619  lr 1.09e-04
+[r0-dam-refres-dam] eval @ ep94: AP50 89.36  F1 89.59
+[r0-dam-refres-dam] 95/100  loss 0.7574  lr 1.06e-04
+[r0-dam-refres-dam] 96/100  loss 0.7559  lr 1.04e-04
+[r0-dam-refres-dam] eval @ ep96: AP50 89.20  F1 89.56
+[r0-dam-refres-dam] 97/100  loss 0.7533  lr 1.02e-04
+[r0-dam-refres-dam] 98/100  loss 0.7482  lr 1.01e-04
+[r0-dam-refres-dam] eval @ ep98: AP50 89.47  F1 89.69
+[r0-dam-refres-dam] 99/100  loss 0.7656  lr 1.00e-04
+[r0-dam-refres-dam] 100/100  loss 0.7548  lr 1.00e-04
+[r0-dam-refres-dam] eval @ ep100: AP50 89.20  F1 89.66
+[r0-dam-refres-dam] saved stage checkpoint -> runs/r0-dam-refres/dam.pth
