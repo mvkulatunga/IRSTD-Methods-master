@@ -1,6 +1,6 @@
 """Displacement-Aware Mamba (DAM).
 
-DAM  -> gated Mamba mixer wrapping TIDS
+DAM  -> MambaIR residual state-space block (RSSB) wrapping TIDS
 TIDS -> SDS (difference-aware selection) + TIS (temporal-interpolation scan)
 SDS  -> B, C, Delta = 3DCDC(concat[F_T, F_R])
 TIS  -> SP(1x2)/SP(2x1) + interleave(ref, target) -> X_W, X_H, each scanned in
@@ -143,11 +143,69 @@ class TIDS(nn.Module):
             return yW + yH  # merge the two axes
 
 
-class DAMBlock(nn.Module):
-    """Gated Mamba mixer around TIDS. F_T, F_R (B,C,H,W) -> displacement (B,C,H,W).
+# ChannelAttention and CAB are adapted from MambaIR (Guo et al., ECCV 2024),
+# https://github.com/csguoh/MambaIR, basicsr/archs/mambair_arch.py, Apache License 2.0.
 
-    The output replaces the reference frame's slot in the temporal pool: the reference
-    features plus a learned displacement correction, out(F_R + mid(TIDS * gate)).
+
+class LayerNorm2d(nn.LayerNorm):
+    """LayerNorm over channels at each pixel, as MambaIR's token LayerNorm. (B,C,H,W) -> same."""
+
+    def forward(self, x):
+        return super().forward(x.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+
+
+class ChannelAttention(nn.Module):
+    """Squeeze-and-excitation channel attention (RCAN). (B,C,H,W) -> (B,C,H,W)."""
+
+    def __init__(self, C, squeeze_factor=30):
+        super().__init__()
+        self.attention = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(C, C // squeeze_factor, 1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(C // squeeze_factor, C, 1),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        return x * self.attention(x)
+
+
+class CAB(nn.Module):
+    """MambaIR's lightweight channel-attention block (its is_light_sr variant):
+    1x1 squeeze, depthwise 3x3, GELU, 1x1 expand, dilated depthwise 3x3, channel attention.
+    (B,C,H,W) -> (B,C,H,W). Zero at init, so it adds nothing until it trains."""
+
+    def __init__(self, C, compress_ratio=2, squeeze_factor=30):
+        super().__init__()
+        h = C // compress_ratio
+        self.body = nn.Sequential(
+            nn.Conv2d(C, h, 1),
+            nn.Conv2d(h, h, 3, padding=1, groups=h),
+            nn.GELU(),
+            nn.Conv2d(h, C, 1),
+            nn.Conv2d(C, C, 3, padding=2, dilation=2, groups=C),
+        )
+        self.ca = ChannelAttention(C, squeeze_factor)
+        # the attention multiplies its input, so a zero last conv makes the whole block zero
+        nn.init.zeros_(self.body[-1].weight)
+        nn.init.zeros_(self.body[-1].bias)
+
+    def forward(self, x):
+        return self.ca(self.body(x))
+
+
+class DAMBlock(nn.Module):
+    """MambaIR residual state-space block (RSSB) around TIDS.
+    F_T, F_R (B,C,H,W) -> displacement (B,C,H,W).
+
+        x   = s1 * F_R + mid(LN(TIDS) * gate)     state-space part, as MambaIR's SS2D
+        x   = s2 * x   + CAB(LN(x))               local + channel-attention part
+        out = out_linear(x)
+
+    TIDS replaces MambaIR's single-image 4-way scan, so the block still scans the
+    interleaved reference/target pair. The output replaces the reference frame's slot
+    in the temporal pool.
     """
 
     def __init__(self, C, d_state=16, expand=1, theta=0.7):
@@ -158,13 +216,18 @@ class DAMBlock(nn.Module):
         self.dw = nn.Conv2d(d_inner, d_inner, 3, padding=1, groups=d_inner, bias=True)
         self.in_z = nn.Conv2d(C, d_inner, 1, bias=False)  # gate stream
         self.tids = TIDS(C, d_state=d_state, expand=expand, theta=theta)
+        self.scan_norm = LayerNorm2d(d_inner)  # MambaIR's out_norm, before the gate
         self.mid = nn.Conv2d(d_inner, C, 1, bias=False)  # between multiply and residual
+        self.skip1 = nn.Parameter(torch.ones(C))  # MambaIR's learnable skip scales
+        self.skip2 = nn.Parameter(torch.ones(C))
+        self.cab_norm = LayerNorm2d(C)
+        self.cab = CAB(C)
         self.out = nn.Conv2d(C, C, 1, bias=False)  # final linear
 
-        # mid = 0 and out = identity make the block return exactly F_R at init, so switching
-        # the DAM on at the start of stage 2 leaves the temporal pool, and the model's output,
-        # as stage 1 left them (tools/check_dam.py, "handover"). The correction then grows
-        # from zero as mid trains.
+        # mid = 0, CAB = 0, skip scales = 1 and out = identity make the block return exactly
+        # F_R at init, so switching the DAM on at the start of stage 2 leaves the temporal
+        # pool, and the model's output, as stage 1 left them (tools/check_dam.py, "handover").
+        # The correction then grows from zero as mid and the CAB train.
         nn.init.zeros_(self.mid.weight)
         with torch.no_grad():
             self.out.weight.zero_()
@@ -186,14 +249,16 @@ class DAMBlock(nn.Module):
         xt = F.silu(self.dw(self.in_x(t)))
         xr = F.silu(self.dw(self.in_x(r)))
 
-        # TIDS
-        d = self.tids(xt, xr)
+        # TIDS, normalised before the gate as in MambaIR's SS2D
+        d = self.scan_norm(self.tids(xt, xr))
 
         # hadamard product -> linear
         y = self.mid(d * z)
 
-        # residual connection -> linear
-        return self.out(res + y)
+        # scaled residual (state-space part), then scaled residual + CAB (local part)
+        x = self.skip1.view(1, -1, 1, 1) * res + y
+        x = self.skip2.view(1, -1, 1, 1) * x + self.cab(self.cab_norm(x))
+        return self.out(x)
 
 
 class DisplacementNet(nn.Module):

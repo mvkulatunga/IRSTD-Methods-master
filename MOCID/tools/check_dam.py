@@ -6,8 +6,8 @@ The checkpoint must be a stage-1 checkpoint (DAM never trained), and --profile m
 match the settings it was trained with, because the input normalisation differs.
 
 Checks
-  1. checkpoint   the DAM in the checkpoint is at its initial weights, so the handover
-                  check below is testing the DAM's init and not leftover training
+  1. checkpoint   the DAM is at its initial weights (the checkpoint's disp.* are dropped,
+                  as stage 2 does), so the handover check below tests the DAM's init
   2. parameters   stage-1 model, DAM and total vs the paper's Table 2 (9.45 / 3.60 / 13.05 M)
   3. handover     switching the DAM on at its initial weights leaves the model's output
                   unchanged, so stage 2 starts from the stage-1 model (CODE-REVIEW.md
@@ -65,7 +65,12 @@ def main():
 
     model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0])
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
-    model.load_state_dict(strip_compile(ck["model"]))
+    # as stage 2 does (train.py, seed_from_fista_best): drop the checkpoint's disp.* and keep
+    # the DAM at its own init, so a checkpoint saved with an older DAM layout still loads
+    sd = {k: v for k, v in strip_compile(ck["model"]).items() if not k.startswith("disp.")}
+    missing, unexpected = model.load_state_dict(sd, strict=False)
+    stray = [k for k in missing if not k.startswith("disp.")] + unexpected
+    assert not stray, f"checkpoint does not match the model outside the DAM: {stray[:5]}"
     model = model.to(dev).eval()
 
     # 1. the DAM in the checkpoint is untouched
