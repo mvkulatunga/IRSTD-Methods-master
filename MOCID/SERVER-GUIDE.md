@@ -351,6 +351,17 @@ cd ~/IRSTD-Methods-master/MOCID
 Add `--recal-bn 300` to `eval` to score them the way training now does; R0's stage-1
 checkpoint scores 88.65 as saved and 89.55 recomputed.
 
+**A video of one validation sequence**, with the model's detections drawn on each frame, its
+time per frame, and how many frames had the target found (same `--profile`/`--model` as the
+checkpoint; leave out `--ckpt` for the plain video with ground truth):
+
+```bash
+/srv/proj-mamba/venv/bin/python tools/animate.py --video data6 --out ~/data6.mp4 --profile r0 \
+    --ckpt /srv/proj-mamba/mocid-baseline/checkpoints/r0_fista_best.pth
+```
+
+The server's OpenCV writes `mp4v`, which some players (QuickTime) may not open; VLC does.
+
 When you report a run, give both the best and the final epoch. The best epoch is chosen on
 the validation set, so on its own it is optimistic.
 
