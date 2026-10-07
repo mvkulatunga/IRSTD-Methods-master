@@ -100,7 +100,10 @@ def add_inset(img, centre, crop=48, scale=4):
 def put_lines(img, lines):
     for k, line in enumerate(lines):
         y = img.shape[0] - 10 - 18 * (len(lines) - 1 - k)
-        cv2.putText(img, line, (8, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 3, cv2.LINE_AA)
+        # black outline from shifted thin copies: a thicker stroke would also widen the
+        # letter spacing, so the outline would drift away from the white text
+        for dx, dy in ((-1, -1), (-1, 1), (1, -1), (1, 1), (-1, 0), (1, 0), (0, -1), (0, 1)):
+            cv2.putText(img, line, (8 + dx, y + dy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
         cv2.putText(img, line, (8, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, TEXT_BGR, 1, cv2.LINE_AA)
 
 
@@ -150,7 +153,9 @@ def main():
         stage = load_weights(model, a.ckpt)
         model.eval()
         use_dam = (a.dam if a.dam is not None else stage == 2) and a.model == "MOCID"
-        name = f"{a.model}{' +DAM' if use_dam else ''} ({os.path.basename(a.ckpt)})"
+        # run folder + file: every run's best checkpoint is called dam_best.pth / best.pth
+        run = os.path.basename(os.path.dirname(os.path.abspath(a.ckpt)))
+        name = f"{a.model}{' +DAM' if use_dam else ''} ({run}/{os.path.basename(a.ckpt)})"
         for _ in range(3):  # warm-up: first calls include one-off CUDA setup
             detect(model, ds[idx[0]][0], device, use_dam, cfg, a.conf, a.nms)
     print(f"{a.video}: {len(idx)} frames, {name}, profile {cfg.PROFILE}")
@@ -165,7 +170,7 @@ def main():
 
         if not a.no_gt:
             for b in gt:
-                draw_box(img, b, GT_BGR)
+                draw_box(img, b + np.array([-2, -2, 2, 2]), GT_BGR)  # 2 px out: stays visible under a matching detection
         box, score = np.zeros((0, 4)), np.zeros(0)
         if model is not None:
             box, score, ms = detect(model, clip, device, use_dam, cfg, a.conf, a.nms)
