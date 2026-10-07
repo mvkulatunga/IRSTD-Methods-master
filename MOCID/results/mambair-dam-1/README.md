@@ -1,7 +1,9 @@
 # R0 stage 2 with the MambaIR DAM (`mambair-dam-1`)
 
 Stage 2 (DAM) of R0 with the DAM rebuilt around a MambaIR residual state-space block
-around its TIDS scan (commit `51c1ea3`, `components/dam.py`). The starting checkpoint and
+around its TIDS scan (commit `51c1ea3`, `components/dam.py`). That code is on the
+`dam-mambair` branch only; `main` keeps the previous DAM, which scored higher (below). The
+starting checkpoint and
 settings are R0's, as in [R0-DAM-fixed](../R0-DAM-fixed/README.md), so that run is the
 comparison.
 
