@@ -96,7 +96,9 @@ class Config:
     if ON_SERVER and DATASET in _SERVER_SPLITS and "MOCID_DATA_ROOT" not in os.environ:
         _default_splits = _SERVER_SPLITS[DATASET]
     else:
-        _default_splits = tuple(os.path.join(DATA_ROOT, s) for s in _SPLITS[DATASET])
+        # CHANGE: a generator in a class body can't see class variables like DATA_ROOT
+        _train_split, _val_split = _SPLITS[DATASET]
+        _default_splits = (os.path.join(DATA_ROOT, _train_split), os.path.join(DATA_ROOT, _val_split))
 
     train_path = os.environ.get("MOCID_TRAIN_PATH", _default_splits[0])
     val_path = os.environ.get("MOCID_VAL_PATH", _default_splits[1])
