@@ -12,6 +12,18 @@ base commit. Copy `runs/<tag>/eval_log.csv` numbers into the AP50 / F1 columns.
 | .+FISTA+DAM (MOCID) | 95.93 | 98.22 | 13.05 M |
 | MOCID on IRDST | 94.74 | 97.88 | — |
 
+## Results at a glance (DAUB, R0-settings ladder)
+
+All three trained with `--profile r0` from the same stage-1 run. AP50 is over all 7
+validation videos; "found" is the per-video hit rate at score ≥ 0.3 from `tools/animate.py`
+(not AP50); time is per frame on 1× L40S. Videos and details: `results/demo-videos/`.
+
+| Model | AP50 best / final | vs paper | data6 found | data15 found | Time / frame |
+|---|---|---|---|---|---|
+| Stage 1 (+FISTA, DAM off) | 88.65 / 88.65 | 92.42 | 95.4% | 45.6% | 14.0 ms (71 fps) |
+| MOCID, previous DAM (`R0-DAM-fixed`) | **90.12 / 89.20** | 95.93 | **97.0%** | **53.5%** | 24.4 ms (41 fps) |
+| MOCID, MambaIR DAM (`mambair-dam-1`) | 89.53 / 88.53 | 95.93 | 96.2% | 53.1% | 28.2 ms (35 fps) |
+
 ## Runs
 
 | id | date | commit | dataset | GPU | change vs previous | stage-1 AP50 / F1 | stage-2 AP50 / F1 | params (noDAM / DAM) | cost | notes |
