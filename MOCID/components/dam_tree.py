@@ -6,11 +6,14 @@ interleaved map. The tree is undirected and propagated leaf->root then root->lea
 so one pass replaces the forward + reverse scans and no flatten/transpose is needed.
 
 Backends:
-    cuda  GrootV's ops from third-party/TreeScan (MST, BFS, refine), used when the
-          `tree_scan` extension is built and inputs are on the GPU
+    cuda  GrootV's ops (MST, BFS, refine), vendored in third_party/TreeScan and built
+          in place there (see its README); used when built and inputs are on the GPU
     ref   pure-PyTorch reference, same maths, Python loops over nodes: CPU / small
           maps only (tests on a Mac)
 """
+import os
+import sys
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,6 +21,13 @@ from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 
 from components.dam import TIDS
+
+# the CUDA ops are built in place in the vendored copy, not installed into the venv
+TREESCAN_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "third_party", "TreeScan"
+)
+if TREESCAN_DIR not in sys.path:
+    sys.path.append(TREESCAN_DIR)
 
 try:
     from tree_scan import _C
@@ -188,9 +198,13 @@ class TreeTIDS(TIDS):
         self.backend = backend  # "auto" | "cuda" | "ref"
 
     def _refine(self, feat, w, guide):
-        use_cuda = self.backend == "cuda" or (
-            self.backend == "auto" and HAS_TREE_CUDA and feat.is_cuda
-        )
+        if self.backend == "auto" and feat.is_cuda and not HAS_TREE_CUDA:
+            # the reference would run, but far too slowly to train with: fail loudly
+            raise RuntimeError(
+                "tree scan on GPU needs the TreeScan CUDA ops; build them as in "
+                "third_party/TreeScan/README.md (or set backend='ref' to force the slow path)"
+            )
+        use_cuda = self.backend == "cuda" or (self.backend == "auto" and feat.is_cuda)
         return (_tree_refine_cuda if use_cuda else _tree_refine_ref)(feat, w, guide)
 
     def _tree_scan(self, seq, dt, Bp, Cp, A):

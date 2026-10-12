@@ -63,9 +63,23 @@ def main():
     dev = torch.device("cuda")
     print(f"profile {cfg.PROFILE} (input {cfg.NORMALISE}), checkpoint {a.ckpt}\n")
 
-    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0])
+    # [mamba-tree] build with the profile's scan, so --profile r0-tree checks the tree DAM
+    model = MOCID(
+        num_frames=cfg.T, img_size=cfg.IMG_SIZE[0], d_state=cfg.D_STATE, scan=cfg.SCAN
+    )
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
-    model.load_state_dict(strip_compile(ck["model"]))
+    sd = strip_compile(ck["model"])
+    if cfg.SCAN == "bidir":
+        model.load_state_dict(sd)
+    else:
+        # [mamba-tree] a stage-1 checkpoint holds a bidir DAM, which doesn't fit another
+        # scan; drop it and keep the model's own DAM init, as stage 2 does
+        # (train.seed_from_fista_best)
+        sd = {k: v for k, v in sd.items() if not k.startswith("disp.")}
+        missing, unexpected = model.load_state_dict(sd, strict=False)
+        assert not unexpected and all(k.startswith("disp.") for k in missing), (
+            f"checkpoint doesn't match the model outside the DAM: {unexpected or missing}"
+        )
     model = model.to(dev).eval()
 
     # 1. the DAM in the checkpoint is untouched

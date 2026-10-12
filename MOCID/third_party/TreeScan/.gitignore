@@ -1,0 +1,4 @@
+# build outputs, made on the server by `setup.py build_ext --inplace`
+build/
+*.so
+*.egg-info/
