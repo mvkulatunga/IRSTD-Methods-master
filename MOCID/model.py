@@ -15,13 +15,15 @@ class MOCID(nn.Module):
     """Backbone -> DAM -> temporal pooling -> FPN -> YOLOX head."""
 
     def __init__(
-        self, num_classes=1, num_frames=5, img_size=512, base_channels=16, d_state=32
+        self, num_classes=1, num_frames=5, img_size=512, base_channels=16, d_state=32,
+        dam_opts=None,
     ):
+        """dam_opts: keyword options for the DAM blocks (config DAM_OPTS)."""
         super().__init__()
         ch = [base_channels * 8, base_channels * 16, base_channels * 32]
         self.backbone = SpatioTemporalBackbone(3, base_channels, num_frames, img_size)
         self.pool = TemporalPooling()
-        self.disp = DisplacementNet(ch, d_state=d_state, expand=1, theta=0.7)
+        self.disp = DisplacementNet(ch, d_state=d_state, expand=1, theta=0.7, **(dam_opts or {}))
         self.fpn = FPN(ch)
         # width=0.5 halves the doubled in_channels back to ch
         self.head = YOLOXHead(num_classes, width=0.5, in_channels=[c * 2 for c in ch])

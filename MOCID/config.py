@@ -21,7 +21,8 @@ _SERVER_SPLITS = {
 
 
 # Named settings profiles, selected with `main.py --profile <name>` or MOCID_PROFILE=<name>.
-# Each entry overrides the Config defaults below.
+# Each entry overrides the Config defaults below. Several can be combined, applied left to
+# right: `--profile r0,wdfix,freeze`. Dict values (DAM_OPTS) are merged, not replaced.
 PROFILES = {
     # R0: the settings of the team's first full two-stage run (commit b82300f,
     # results/R0), which the team uses as the reference for new work. Differs from
@@ -36,6 +37,12 @@ PROFILES = {
         # not an R0 setting: evaluation-only, and part of the team standard since 1 Oct 2026
         "BN_RECAL_BATCHES": 300,
     },
+    # Add-ons, for use after r0. wdfix: no weight decay on 1-D parameters or on parameters
+    # marked _no_weight_decay (the fix from results/Base-fixedwd-imagenet), keeping R0's
+    # /255 input so R0's stage-1 checkpoint still fits.
+    "wdfix": {"DECAY_ALL": False},
+    # freeze: stage 2 trains the DAM only, as the paper describes
+    "freeze": {"STAGE2_TRAIN_NECK_HEAD": False},
 }
 
 
@@ -46,10 +53,10 @@ class Config:
 
     # LR_INIT follows SSTNet's linear batch-size scaling rule (which the paper's
     # split/training convention follows): base 0.01 is defined for batch 64, so
-    # at our batch of 4 that's 0.01 * 4/64 = 6.25e-4. Running 0.01 unscaled (16x
-    # too high) is the prime suspect behind the Base/`.+FISTA` mid-training
-    # collapse (EXPERIMENTS.md: Base and R0 runs) -- MIN_LR is scaled by the same
-    # factor so the warmup/cosine shape (in ratio terms) is unchanged.
+    # at our batch of 4 that's 0.01 * 4/64 = 6.25e-4. Kept for fidelity to SSTNet,
+    # not as a fix: 0.01 unscaled trains stably once weight decay is scoped
+    # correctly (EXPERIMENTS.md, Base-fixedwd-imagenet). MIN_LR is scaled by the
+    # same factor so the warmup/cosine shape (in ratio terms) is unchanged.
     LR_INIT = 6.25e-4
     MIN_LR = 6.25e-6
     LR_DAM = 1e-3  # stage-2 LR; 1e-2 diverges a fresh Mamba branch -- unreviewed, see PLAN.md
@@ -67,8 +74,13 @@ class Config:
     TRACK_BEST_AFTER = 0
     # input normalisation: "imagenet" = /255 then ImageNet mean/std; "255" = /255 only
     NORMALISE = "imagenet"
-    # False = no weight decay on 1-D parameters (BatchNorm, biases); True = decay everything
+    # False = no weight decay on 1-D parameters (BatchNorm, biases) or on parameters marked
+    # _no_weight_decay (Mamba's A_log/D, the DAM's identity-initialised out); True = decay all
     DECAY_ALL = False
+    # stage 2: also train the FPN and head (True, the repo's original behaviour) or the DAM only
+    STAGE2_TRAIN_NECK_HEAD = True
+    # keyword options for the DAM blocks (components/dam.py); {} = the default block
+    DAM_OPTS = {}
     # before every evaluation, recompute the evaluated (EMA) model's BatchNorm statistics
     # from this many training batches (utils.recalibrate_bn); 0 = off. Evaluation only:
     # training is unaffected. Without it, R0-profile runs can show a false collapse.
@@ -106,12 +118,16 @@ class Config:
     val_path = os.environ.get("MOCID_VAL_PATH", _default_splits[1])
 
     def __init__(self, profile=None):
-        """profile: a key of PROFILES, or None for MOCID_PROFILE (default: no profile)."""
+        """profile: comma-separated keys of PROFILES, or None for MOCID_PROFILE (default: none)."""
         self.PROFILE = profile or os.environ.get("MOCID_PROFILE", "default")
-        if self.PROFILE != "default":
-            if self.PROFILE not in PROFILES:
-                raise ValueError(f"unknown profile {self.PROFILE!r}; choose from {list(PROFILES)}")
-            for k, v in PROFILES[self.PROFILE].items():
+        if self.PROFILE == "default":
+            return
+        for name in self.PROFILE.split(","):
+            if name not in PROFILES:
+                raise ValueError(f"unknown profile {name!r}; choose from {list(PROFILES)}")
+            for k, v in PROFILES[name].items():
+                if isinstance(v, dict):
+                    v = {**getattr(self, k), **v}
                 setattr(self, k, v)
 
 

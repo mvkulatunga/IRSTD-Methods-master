@@ -140,6 +140,9 @@ def run_stage(
         model.train()
         if use_dam:
             model.backbone.eval()  # frozen FISTA: no BN stat updates
+            for m in (model.fpn, model.head):  # frozen too when STAGE2_TRAIN_NECK_HEAD=False
+                if not any(p.requires_grad for p in m.parameters()):
+                    m.eval()
 
         tot = nb = 0
         pbar = tqdm(
@@ -276,7 +279,7 @@ def train_mocid(
 
     stage1_ckpt: skip stage 1 and run stage 2 only, seeded from this stage-1
     checkpoint (e.g. runs/server-r0/fista_best.pth)."""
-    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]).to(device)
+    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0], dam_opts=cfg.DAM_OPTS).to(device)
     model = maybe_compile(model)
 
     ensure_runs_dir()
@@ -333,7 +336,8 @@ def train_mocid(
 
     # ---------------- stage 2: freeze FISTA, train DAM ----------------
     print("=" * 25, "STAGE 2: DAM", "=" * 25)
-    set_stage(model, 2)
+    set_stage(model, 2, cfg.STAGE2_TRAIN_NECK_HEAD)
+    print(f"[stage2] training the DAM{' + FPN + head' if cfg.STAGE2_TRAIN_NECK_HEAD else ' only (FPN and head frozen)'}")
 
     # runs before ModelEMA so the shadow copy also starts from the best backbone
     seed_from_fista_best(model, out_dir, stage1_ckpt)

@@ -70,6 +70,9 @@ class TIDS(nn.Module):
             torch.log(torch.arange(1, d_state + 1).float().repeat(d_inner, 1))
         )
         self.D = nn.Parameter(torch.ones(d_inner))
+        # as in Mamba: decay would pull A_log to 0 (every state decaying at the same rate)
+        self.A_log._no_weight_decay = True
+        self.D._no_weight_decay = True
 
     @staticmethod
     def _interp_width(t_pool, r_pool):
@@ -172,6 +175,7 @@ class DAMBlock(nn.Module):
             # create diagonal with weights initialized to 1.0
             eye = torch.arange(C)
             self.out.weight[eye, eye, 0, 0] = 1.0
+        self.out.weight._no_weight_decay = True  # decay would pull the identity towards 0
 
     def forward(self, F_T, F_R):
         # residual from the reference frame. It was F_T, which made every reference slot a

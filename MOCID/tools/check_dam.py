@@ -63,7 +63,7 @@ def main():
     dev = torch.device("cuda")
     print(f"profile {cfg.PROFILE} (input {cfg.NORMALISE}), checkpoint {a.ckpt}\n")
 
-    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0])
+    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0], dam_opts=cfg.DAM_OPTS)
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
     model.load_state_dict(strip_compile(ck["model"]))
     model = model.to(dev).eval()
@@ -127,7 +127,7 @@ def main():
     # 4. one stage-2 training step
     train = MOCIDDataset(cfg.train_path, T=cfg.T, img_size=cfg.IMG_SIZE, is_train=True, norm=cfg.NORMALISE)
     tclips, labels = collate_train([train[i] for i in (0, len(train) // 3, 2 * len(train) // 3, len(train) - 1)])
-    set_stage(model, 2)
+    set_stage(model, 2, cfg.STAGE2_TRAIN_NECK_HEAD)
     model.train()
     model.backbone.eval()  # frozen in stage 2, as train.py does
     model.zero_grad(set_to_none=True)
