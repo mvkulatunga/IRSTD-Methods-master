@@ -74,8 +74,9 @@ def parse_args():
 
 def build_model(cfg, device, name="MOCID"):
     """-> the model called name (a key of MODELS) on device."""
+    extra = cfg.dam_kwargs() if name == "MOCID" else {}  # the profile's DAM options
     return MODELS[name](
-        num_classes=cfg.NUM_CLASSES, num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]
+        num_classes=cfg.NUM_CLASSES, num_frames=cfg.T, img_size=cfg.IMG_SIZE[0], **extra
     ).to(device)
 
 

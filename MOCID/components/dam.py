@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from config import add_dependency_paths
+from components.cfm import CrossFrameMamba
 
 # the selective-scan kernel lives in an external VMamba checkout
 add_dependency_paths()
@@ -148,9 +149,13 @@ class DAMBlock(nn.Module):
 
     The output replaces the reference frame's slot in the temporal pool: the reference
     features plus a learned displacement correction, out(F_R + mid(TIDS * gate)).
+
+    cfm=True adds CFMW's cross-modality fusion Mamba (components/cfm.py) beside TIDS, with the
+    two frames as the streams: out(F_R + mid((TIDS + CFM) * gate)). TIDS models local
+    frame-to-frame displacement, CFM the global cross-frame context.
     """
 
-    def __init__(self, C, d_state=16, expand=1, theta=0.7):
+    def __init__(self, C, d_state=16, expand=1, theta=0.7, cfm=False, cfm_grid=8, cfm_layers=1):
         super().__init__()
         d_inner = C * expand
         self.norm = nn.GroupNorm(1, C)  # LayerNorm over channels
@@ -158,6 +163,7 @@ class DAMBlock(nn.Module):
         self.dw = nn.Conv2d(d_inner, d_inner, 3, padding=1, groups=d_inner, bias=True)
         self.in_z = nn.Conv2d(C, d_inner, 1, bias=False)  # gate stream
         self.tids = TIDS(C, d_state=d_state, expand=expand, theta=theta)
+        self.cfm = CrossFrameMamba(d_inner, grid=cfm_grid, n_layer=cfm_layers) if cfm else None
         self.mid = nn.Conv2d(d_inner, C, 1, bias=False)  # between multiply and residual
         self.out = nn.Conv2d(C, C, 1, bias=False)  # final linear
 
@@ -188,6 +194,8 @@ class DAMBlock(nn.Module):
 
         # TIDS
         d = self.tids(xt, xr)
+        if self.cfm is not None:
+            d = d + self.cfm(xt, xr)  # CFMW's Add2: the fused streams join TIDS's output
 
         # hadamard product -> linear
         y = self.mid(d * z)
@@ -197,20 +205,29 @@ class DAMBlock(nn.Module):
 
 
 class DisplacementNet(nn.Module):
-    """DAM over every scale and reference frame; drop-in for MOCID.disp."""
+    """DAM over every scale and reference frame; drop-in for MOCID.disp.
 
-    def __init__(self, channels, d_state=16, expand=1, theta=0.7):
+    cfm, cfm_grid, cfm_layers: CFMW's fusion beside TIDS in every DAMBlock (see DAMBlock)."""
+
+    def __init__(self, channels, d_state=16, expand=1, theta=0.7, cfm=False, cfm_grid=8,
+                 cfm_layers=1):
         super().__init__()
         self.blocks = nn.ModuleList(
-            [DAMBlock(c, d_state=d_state, expand=expand, theta=theta) for c in channels]
+            [DAMBlock(c, d_state=d_state, expand=expand, theta=theta, cfm=cfm, cfm_grid=cfm_grid,
+                      cfm_layers=cfm_layers) for c in channels]
         )
 
     def forward(self, feats_by_scale):
         """list of (B,T,C,H,W), target last -> same shapes with refs replaced by disp feats."""
         outs = []
         for k, feat in enumerate(feats_by_scale):
+            B, T = feat.shape[:2]
             F_T = feat[:, -1]
-            disp = [self.blocks[k](F_T, feat[:, r]) for r in range(feat.shape[1] - 1)]
-            disp.append(F_T)  # target stays last so TemporalPooling is unchanged
-            outs.append(torch.stack(disp, dim=1))
+            # all T-1 (target, reference) pairs in one call, reference-major: every op in the
+            # block is per sample, so this equals one call per reference in fewer kernel launches
+            refs = feat[:, :-1].transpose(0, 1).reshape((T - 1) * B, *feat.shape[2:])
+            disp = self.blocks[k](F_T.repeat(T - 1, 1, 1, 1), refs)
+            disp = disp.view(T - 1, B, *disp.shape[1:]).transpose(0, 1)
+            # target stays last so TemporalPooling is unchanged
+            outs.append(torch.cat([disp, F_T.unsqueeze(1)], dim=1))
         return outs

@@ -31,6 +31,7 @@ class MOCID(nn.Module):
     - d_state (int): SSM state dimension used by the DAM's selective scan.
     - expand (int): channel expansion factor inside each DAM block.
     - theta (float): central-difference weighting used by the DAM's 3D-CDC.
+    - cfm, cfm_grid, cfm_layers: CFMW's fusion Mamba in the DAM beside TIDS (components/cfm.py).
     """
 
     def __init__(
@@ -42,9 +43,13 @@ class MOCID(nn.Module):
         d_state: int = 32,
         expand: int = 1,
         theta: float = 0.7,
+        cfm: bool = False,
+        cfm_grid: int = 8,
+        cfm_layers: int = 1,
         **kwargs,
     ):
         super().__init__()
+        self.cfm, self.cfm_grid, self.cfm_layers = cfm, cfm_grid, cfm_layers
         self.num_classes = num_classes
         self.num_frames = num_frames
         self.img_size = img_size
@@ -67,7 +72,8 @@ class MOCID(nn.Module):
         )
         self.pool = TemporalPooling()
         self.disp = DisplacementNet(
-            ch, d_state=self.d_state, expand=self.expand, theta=self.theta
+            ch, d_state=self.d_state, expand=self.expand, theta=self.theta,
+            cfm=self.cfm, cfm_grid=self.cfm_grid, cfm_layers=self.cfm_layers,
         )
         self.fpn = FPN(ch)
         # width=0.5 halves the doubled in_channels (target + pooled motion) back to ch

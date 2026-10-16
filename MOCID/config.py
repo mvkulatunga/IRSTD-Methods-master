@@ -37,6 +37,10 @@ PROFILES = {
         "BN_RECAL_BATCHES": 300,
     },
 }
+# r0-cfm: R0's settings with CFMW's cross-modality fusion Mamba added to every DAM beside TIDS,
+# the target and reference frames as its two streams (components/cfm.py, branch cfmw-test).
+# Stage 2 also scores every evaluation with the DAM off, to show what the DAM adds.
+PROFILES["r0-cfm"] = {**PROFILES["r0"], "DAM_CFM": True, "EVAL_DAM_OFF": True}
 
 
 class Config:
@@ -73,6 +77,12 @@ class Config:
     # from this many training batches (utils.recalibrate_bn); 0 = off. Evaluation only:
     # training is unaffected. Without it, R0-profile runs can show a false collapse.
     BN_RECAL_BATCHES = 300
+    # CFMW's fusion Mamba in the DAM (components/cfm.py): on/off, token grid per frame, layers
+    DAM_CFM = False
+    CFM_GRID = 8
+    CFM_LAYERS = 1
+    # stage 2 also logs AP50/F1 with the DAM switched off (two extra eval_log.csv columns)
+    EVAL_DAM_OFF = False
 
     STRIDES = [8, 16, 32]
     NUM_CLASSES = 1
@@ -113,6 +123,10 @@ class Config:
                 raise ValueError(f"unknown profile {self.PROFILE!r}; choose from {list(PROFILES)}")
             for k, v in PROFILES[self.PROFILE].items():
                 setattr(self, k, v)
+
+    def dam_kwargs(self):
+        """-> the DAM options to build MOCID with: MOCID(..., **cfg.dam_kwargs())."""
+        return {"cfm": self.DAM_CFM, "cfm_grid": self.CFM_GRID, "cfm_layers": self.CFM_LAYERS}
 
 
 def get_device():

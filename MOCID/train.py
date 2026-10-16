@@ -99,11 +99,14 @@ def run_stage(
     strides=(8, 16, 32),
     num_classes=1,
     bn_recal_batches=0,
+    eval_dam_off=False,
 ):
     """One training stage; all artifacts land in out_dir. -> None.
 
     bn_recal_batches > 0: evaluate (and save as best/final) a copy of the EMA model
-    whose BatchNorm statistics are recomputed from that many training batches."""
+    whose BatchNorm statistics are recomputed from that many training batches.
+    eval_dam_off: with use_dam, also score each evaluation with the DAM off (logged only;
+    best-checkpoint tracking still uses the DAM-on AP50)."""
     os.makedirs(out_dir, exist_ok=True)
     ckpt_path = os.path.join(out_dir, ckpt_path)
     csv_path = os.path.join(out_dir, csv_path)
@@ -198,18 +201,26 @@ def run_stage(
                 num_classes=num_classes,
             )
             # one row per eval: timestamp, tag, epoch, AP50, F1, mean epoch loss
-            log_eval(
-                csv_path,
-                {
-                    "time": time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "tag": tag,
-                    "epoch": ep + 1,
-                    "ap50": round(ap50 * 100, 2),
-                    "f1": round(f1 * 100, 2),
-                    "avg_loss": round(avg, 4),
-                },
-            )
-            print(f"[{tag}] eval @ ep{ep+1}: AP50 {ap50*100:.2f}  F1 {f1*100:.2f}")
+            row = {
+                "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "tag": tag,
+                "epoch": ep + 1,
+                "ap50": round(ap50 * 100, 2),
+                "f1": round(f1 * 100, 2),
+                "avg_loss": round(avg, 4),
+            }
+            msg = f"[{tag}] eval @ ep{ep+1}: AP50 {ap50*100:.2f}  F1 {f1*100:.2f}"
+            if eval_dam_off and use_dam:
+                # the same model with the DAM switched off: what the DAM adds at this epoch
+                # (appended columns, so readers of the first six are unaffected)
+                ap_off, f1_off = evaluate(
+                    eval_target, val_loader, device, False,
+                    strides=list(strides), num_classes=num_classes,
+                )
+                row.update(ap50_dam_off=round(ap_off * 100, 2), f1_dam_off=round(f1_off * 100, 2))
+                msg += f"  | DAM off: AP50 {ap_off*100:.2f}  F1 {f1_off*100:.2f}"
+            log_eval(csv_path, row)
+            print(msg)
 
             # track_best_after avoids locking in an early high-LR AP50 spike
             track_ok = (ep + 1) > track_best_after
@@ -276,7 +287,7 @@ def train_mocid(
 
     stage1_ckpt: skip stage 1 and run stage 2 only, seeded from this stage-1
     checkpoint (e.g. runs/server-r0/fista_best.pth)."""
-    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]).to(device)
+    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0], **cfg.dam_kwargs()).to(device)
     model = maybe_compile(model)
 
     ensure_runs_dir()
@@ -369,6 +380,7 @@ def train_mocid(
             strides=cfg.STRIDES,
             num_classes=cfg.NUM_CLASSES,
             bn_recal_batches=cfg.BN_RECAL_BATCHES,
+            eval_dam_off=cfg.EVAL_DAM_OFF,
         )
     else:
         print(f"[train] stage 2 already complete ({s2_start} epochs)")

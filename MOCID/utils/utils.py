@@ -194,7 +194,10 @@ def build_optimizer(model, cfg, epochs, lr=None):
     for p in model.parameters():
         if not p.requires_grad:  # skips frozen stages
             continue
-        (no_decay if p.ndim <= 1 and not decay_all else decay).append(p)
+        # parameters marked _no_weight_decay (Mamba's convention, e.g. components/cfm.py's
+        # A_log, D, dt bias) never decay, even under DECAY_ALL; nothing else sets it
+        keep = getattr(p, "_no_weight_decay", False) or (p.ndim <= 1 and not decay_all)
+        (no_decay if keep else decay).append(p)
 
     opt = torch.optim.SGD(
         [
