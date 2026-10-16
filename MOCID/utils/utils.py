@@ -184,8 +184,9 @@ def build_optimizer(model, cfg, epochs, lr=None):
 
     Weight decay excludes BatchNorm scale/bias and every bias term (any 1-D
     parameter) -- matches official YOLOX's own optimizer setup. Decaying those
-    tends to hurt rather than help. cfg.DECAY_ALL (the R0 profile) restores the
-    original behaviour: uniform decay on every parameter.
+    tends to hurt rather than help. It also excludes parameters marked
+    _no_weight_decay, as Mamba does for A_log and D. cfg.DECAY_ALL (the R0 profile)
+    restores the original behaviour: uniform decay on every parameter.
     """
     lr = cfg.LR_INIT if lr is None else lr
     decay_all = getattr(cfg, "DECAY_ALL", False)
@@ -194,7 +195,8 @@ def build_optimizer(model, cfg, epochs, lr=None):
     for p in model.parameters():
         if not p.requires_grad:  # skips frozen stages
             continue
-        (no_decay if p.ndim <= 1 and not decay_all else decay).append(p)
+        exempt = p.ndim <= 1 or getattr(p, "_no_weight_decay", False)
+        (no_decay if exempt and not decay_all else decay).append(p)
 
     opt = torch.optim.SGD(
         [
@@ -218,19 +220,19 @@ def build_optimizer(model, cfg, epochs, lr=None):
     return opt, torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda)
 
 
-def set_stage(model, stage):
-    """stage 1: train backbone+pool+fpn+head. stage 2: freeze backbone, train disp. -> None."""
+def set_stage(model, stage, train_neck_head=True):
+    """stage 1: train backbone+pool+fpn+head. stage 2: freeze the backbone and train disp,
+    plus fpn+head unless train_neck_head is False (the paper trains the DAM only). -> None."""
     for p in model.parameters():
         p.requires_grad_(False)
 
     if stage == 1:
         train = [model.backbone, model.pool, model.fpn, model.head]
     elif stage == 2:
-        train = [
-            m
-            for m in [getattr(model, "disp", None), model.pool, model.fpn, model.head]
-            if m is not None
-        ]
+        train = [getattr(model, "disp", None), model.pool]
+        if train_neck_head:
+            train += [model.fpn, model.head]
+        train = [m for m in train if m is not None]
     else:
         raise ValueError(stage)
 

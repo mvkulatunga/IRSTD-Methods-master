@@ -74,8 +74,9 @@ def parse_args():
 
 def build_model(cfg, device, name="MOCID"):
     """-> the model called name (a key of MODELS) on device."""
+    kw = {"dam_opts": cfg.DAM_OPTS} if name == "MOCID" else {}
     return MODELS[name](
-        num_classes=cfg.NUM_CLASSES, num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]
+        num_classes=cfg.NUM_CLASSES, num_frames=cfg.T, img_size=cfg.IMG_SIZE[0], **kw
     ).to(device)
 
 
@@ -181,7 +182,8 @@ def main():
     device = get_device()
     print(f"[config] profile: {cfg.PROFILE}  (LR {cfg.LR_INIT} -> {cfg.MIN_LR}, "
           f"input {cfg.NORMALISE}, decay on all params: {cfg.DECAY_ALL}, "
-          f"BatchNorm recomputed before eval: {cfg.BN_RECAL_BATCHES} batches)")
+          f"BatchNorm recomputed before eval: {cfg.BN_RECAL_BATCHES} batches, "
+          f"stage 2 trains FPN+head: {cfg.STAGE2_TRAIN_NECK_HEAD}, DAM options: {cfg.DAM_OPTS or 'none'})")
 
     if args.cmd == "train":
         if args.model == "MOCID":
