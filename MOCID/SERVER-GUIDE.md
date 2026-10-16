@@ -307,6 +307,24 @@ These are not command-line options. To try a different setting, add a new profil
 **Evaluate with the same profile you trained with**: the normalisation differs between
 profiles, and R0's checkpoint scores 49.42 instead of 88.65 without `--profile r0`.
 
+**Combining profiles.** Profiles can be combined with commas, applied left to right, so a
+run can take R0's settings plus one fix at a time and stay comparable with R0. Two add-ons
+are defined for use after `r0`:
+
+| Add-on | Changes |
+|---|---|
+| `wdfix` | no weight decay on 1-D parameters (BatchNorm, biases) or on Mamba's `A_log`/`D` and the DAM's identity-initialised `out` — the fix from `results/Base-fixedwd-imagenet`. Keeps R0's ÷255 input, so R0's stage-1 checkpoint still fits |
+| `freeze` | stage 2 trains the DAM only, as the paper describes, instead of the DAM, FPN and head |
+
+```bash
+$PY main.py --profile r0,wdfix,freeze train --tag dam-wdfix-freeze-jane-1 \
+    --stage1-from /srv/proj-mamba/mocid-baseline/checkpoints/r0_fista_best.pth
+```
+
+Use the same combination for `eval`, `tools/check_dam.py` and `tools/animate.py`. The
+`dam-mambair` branch adds further add-ons for its DAM (`ln`, `dtbias`, `noout`, `cabstd`);
+see `config.py` there.
+
 ## 8. Watching, stopping and resuming
 
 ```bash
