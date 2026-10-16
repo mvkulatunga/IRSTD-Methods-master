@@ -43,6 +43,12 @@ PROFILES = {
     "wdfix": {"DECAY_ALL": False},
     # freeze: stage 2 trains the DAM only, as the paper describes
     "freeze": {"STAGE2_TRAIN_NECK_HEAD": False},
+    # MambaIR DAM options (components/dam.py DAMBlock). A checkpoint must be loaded with
+    # the same ones it was trained with.
+    "ln": {"DAM_OPTS": {"norm": "layer"}},  # per-pixel LayerNorm, as MambaIR
+    "dtbias": {"DAM_OPTS": {"dt_bias": True}},  # Mamba-initialised delta bias
+    "noout": {"DAM_OPTS": {"out_proj": False}},  # no final projection, as MambaIR
+    "cabstd": {"DAM_OPTS": {"cab": "standard"}},  # MambaIR's standard CAB (+~2.1 M)
 }
 
 

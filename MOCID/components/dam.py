@@ -7,6 +7,8 @@ TIS  -> SP(1x2)/SP(2x1) + interleave(ref, target) -> X_W, X_H, each scanned in
         both directions and merged by addition
 """
 
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -60,7 +62,8 @@ class SDS(nn.Module):
 class TIDS(nn.Module):
     """Temporal interpolation + difference-aware selective scan. (B,C,H,W) pair -> (B,C,H,W)."""
 
-    def __init__(self, C, d_state=16, expand=1, theta=0.7):
+    def __init__(self, C, d_state=16, expand=1, theta=0.7, dt_bias=False):
+        """dt_bias: give delta a learned per-channel bias with Mamba's initialisation."""
         super().__init__()
         d_inner = C * expand
         self.C, self.d_inner, self.N = C, d_inner, d_state
@@ -73,6 +76,17 @@ class TIDS(nn.Module):
         # as in Mamba: decay would pull A_log to 0 (every state decaying at the same rate)
         self.A_log._no_weight_decay = True
         self.D._no_weight_decay = True
+
+        if dt_bias:
+            # Mamba's dt_init (also MambaIR's): softplus(bias) starts log-uniform in
+            # [1e-3, 1e-1], so channels begin with a spread of step sizes (memory lengths)
+            dt = torch.exp(
+                torch.rand(d_inner) * (math.log(0.1) - math.log(1e-3)) + math.log(1e-3)
+            ).clamp(min=1e-4)
+            self.dt_bias = nn.Parameter(dt + torch.log(-torch.expm1(-dt)))  # inverse softplus
+            self.dt_bias._no_weight_decay = True
+        else:
+            self.register_parameter("dt_bias", None)
 
     @staticmethod
     def _interp_width(t_pool, r_pool):
@@ -99,8 +113,9 @@ class TIDS(nn.Module):
         B2 = torch.stack([Bp, Bp.flip(-1)], dim=1)
         C2 = torch.stack([Cp, Cp.flip(-1)], dim=1)
 
-        # dt is passed raw; softplus runs inside the kernel and commutes with flip
-        out = selective_scan_fn(u, dl, A2, B2, C2, D2, None, True, True, None)
+        # dt is passed raw; the kernel adds the bias, then softplus (both commute with flip)
+        db = None if self.dt_bias is None else torch.cat([self.dt_bias, self.dt_bias]).float()
+        out = selective_scan_fn(u, dl, A2, B2, C2, D2, db, True, True, None)
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
         fwd, bwd = out[:, :Din], out[:, Din:]
         return fwd + bwd.flip(-1)
@@ -175,20 +190,31 @@ class ChannelAttention(nn.Module):
 
 
 class CAB(nn.Module):
-    """MambaIR's lightweight channel-attention block (its is_light_sr variant):
-    1x1 squeeze, depthwise 3x3, GELU, 1x1 expand, dilated depthwise 3x3, channel attention.
-    (B,C,H,W) -> (B,C,H,W). Zero at init, so it adds nothing until it trains."""
+    """MambaIR's channel-attention block. (B,C,H,W) -> (B,C,H,W). Zero at init, so it adds
+    nothing until it trains.
+    light=True (its is_light_sr variant): 1x1 squeeze, depthwise 3x3, GELU, 1x1 expand,
+        dilated depthwise 3x3, channel attention.
+    light=False (its standard variant): 3x3 conv C -> C/3, GELU, 3x3 conv C/3 -> C,
+        channel attention."""
 
-    def __init__(self, C, compress_ratio=2, squeeze_factor=30):
+    def __init__(self, C, light=True, squeeze_factor=30):
         super().__init__()
-        h = C // compress_ratio
-        self.body = nn.Sequential(
-            nn.Conv2d(C, h, 1),
-            nn.Conv2d(h, h, 3, padding=1, groups=h),
-            nn.GELU(),
-            nn.Conv2d(h, C, 1),
-            nn.Conv2d(C, C, 3, padding=2, dilation=2, groups=C),
-        )
+        if light:
+            h = C // 2
+            self.body = nn.Sequential(
+                nn.Conv2d(C, h, 1),
+                nn.Conv2d(h, h, 3, padding=1, groups=h),
+                nn.GELU(),
+                nn.Conv2d(h, C, 1),
+                nn.Conv2d(C, C, 3, padding=2, dilation=2, groups=C),
+            )
+        else:
+            h = C // 3
+            self.body = nn.Sequential(
+                nn.Conv2d(C, h, 3, padding=1),
+                nn.GELU(),
+                nn.Conv2d(h, C, 3, padding=1),
+            )
         self.ca = ChannelAttention(C, squeeze_factor)
         # the attention multiplies its input, so a zero last conv makes the whole block zero
         nn.init.zeros_(self.body[-1].weight)
@@ -209,36 +235,48 @@ class DAMBlock(nn.Module):
     TIDS replaces MambaIR's single-image 4-way scan, so the block still scans the
     interleaved reference/target pair. The output replaces the reference frame's slot
     in the temporal pool.
+
+    Options (config DAM_OPTS; the defaults rebuild the block of commit 51c1ea3, whose
+    checkpoints therefore still load):
+        norm     "group": one mean/std over the whole feature map (the original DAM's)
+                 "layer": per pixel over channels, as MambaIR's first LayerNorm
+        dt_bias  learned delta bias with Mamba's initialisation (TIDS)
+        out_proj keep the original DAM's final 1x1 projection (MambaIR's block has none)
+        cab      "light" or "standard" MambaIR CAB
     """
 
-    def __init__(self, C, d_state=16, expand=1, theta=0.7):
+    def __init__(self, C, d_state=16, expand=1, theta=0.7,
+                 norm="group", dt_bias=False, out_proj=True, cab="light"):
         super().__init__()
+        assert norm in ("group", "layer") and cab in ("light", "standard"), (norm, cab)
         d_inner = C * expand
-        self.norm = nn.GroupNorm(1, C)  # LayerNorm over channels
+        self.norm = nn.GroupNorm(1, C) if norm == "group" else LayerNorm2d(C)
         self.in_x = nn.Conv2d(C, d_inner, 1, bias=False)  # SSM stream
         self.dw = nn.Conv2d(d_inner, d_inner, 3, padding=1, groups=d_inner, bias=True)
         self.in_z = nn.Conv2d(C, d_inner, 1, bias=False)  # gate stream
-        self.tids = TIDS(C, d_state=d_state, expand=expand, theta=theta)
+        self.tids = TIDS(C, d_state=d_state, expand=expand, theta=theta, dt_bias=dt_bias)
         self.scan_norm = LayerNorm2d(d_inner)  # MambaIR's out_norm, before the gate
         self.mid = nn.Conv2d(d_inner, C, 1, bias=False)  # between multiply and residual
         self.skip1 = nn.Parameter(torch.ones(C))  # MambaIR's learnable skip scales
         self.skip2 = nn.Parameter(torch.ones(C))
         self.cab_norm = LayerNorm2d(C)
-        self.cab = CAB(C)
-        self.out = nn.Conv2d(C, C, 1, bias=False)  # final linear
+        self.cab = CAB(C, light=(cab == "light"))
 
-        # mid = 0, CAB = 0, skip scales = 1 and out = identity make the block return exactly
-        # F_R at init, so switching the DAM on at the start of stage 2 leaves the temporal
-        # pool, and the model's output, as stage 1 left them (tools/check_dam.py, "handover").
-        # The correction then grows from zero as mid and the CAB train.
+        # mid = 0, CAB = 0, skip scales = 1 and out = identity (or no out) make the block
+        # return exactly F_R at init, so switching the DAM on at the start of stage 2 leaves
+        # the temporal pool, and the model's output, as stage 1 left them
+        # (tools/check_dam.py, "handover"). The correction then grows from zero as mid and
+        # the CAB train.
         nn.init.zeros_(self.mid.weight)
-        with torch.no_grad():
-            self.out.weight.zero_()
-
-            # create diagonal with weights initialized to 1.0
-            eye = torch.arange(C)
-            self.out.weight[eye, eye, 0, 0] = 1.0
-        self.out.weight._no_weight_decay = True  # decay would pull the identity towards 0
+        if out_proj:
+            self.out = nn.Conv2d(C, C, 1, bias=False)  # final linear
+            with torch.no_grad():
+                self.out.weight.zero_()
+                eye = torch.arange(C)
+                self.out.weight[eye, eye, 0, 0] = 1.0
+            self.out.weight._no_weight_decay = True  # decay would pull the identity towards 0
+        else:
+            self.out = nn.Identity()
 
     def forward(self, F_T, F_R):
         # residual from the reference frame. It was F_T, which made every reference slot a
@@ -268,10 +306,12 @@ class DAMBlock(nn.Module):
 class DisplacementNet(nn.Module):
     """DAM over every scale and reference frame; drop-in for MOCID.disp."""
 
-    def __init__(self, channels, d_state=16, expand=1, theta=0.7):
+    def __init__(self, channels, d_state=16, expand=1, theta=0.7, **block_opts):
+        """block_opts: DAMBlock options (norm, dt_bias, out_proj, cab)."""
         super().__init__()
         self.blocks = nn.ModuleList(
-            [DAMBlock(c, d_state=d_state, expand=expand, theta=theta) for c in channels]
+            [DAMBlock(c, d_state=d_state, expand=expand, theta=theta, **block_opts)
+             for c in channels]
         )
 
     def forward(self, feats_by_scale):

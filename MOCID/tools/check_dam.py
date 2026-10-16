@@ -76,13 +76,14 @@ def main():
     # 1. the DAM in the checkpoint is untouched
     untouched = all(
         torch.count_nonzero(blk.mid.weight) == 0
-        and torch.equal(blk.out.weight[:, :, 0, 0].cpu(), torch.eye(blk.out.weight.shape[0]))
+        and (not hasattr(blk.out, "weight")  # out_proj=False: no final projection
+             or torch.equal(blk.out.weight[:, :, 0, 0].cpu(), torch.eye(blk.out.weight.shape[0])))
         for blk in model.disp.blocks
     )
     report(
         "checkpoint",
         "PASS" if untouched else "WARN",
-        "DAM at its initial weights (mid = 0, out = identity)" if untouched
+        "DAM at its initial weights (mid = 0, out = identity or absent)" if untouched
         else "DAM weights differ from the init; check 3 then tests those weights, not the init",
     )
 
