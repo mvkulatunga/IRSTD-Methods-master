@@ -163,6 +163,10 @@ class DAMBlock(nn.Module):
         self.dw = nn.Conv2d(d_inner, d_inner, 3, padding=1, groups=d_inner, bias=True)
         self.in_z = nn.Conv2d(C, d_inner, 1, bias=False)  # gate stream
         self.tids = TIDS(C, d_state=d_state, expand=expand, theta=theta)
+        # CFMW's fusion as a second, global branch beside TIDS. TIDS only compares matching
+        # neighbourhoods of the two frames (local displacement); CFM lets every token see the
+        # other frame's whole layout, to separate a target's own motion from scene-wide change
+        # such as camera motion. It reads the same lifted features (xt, xr) as TIDS.
         self.cfm = CrossFrameMamba(d_inner, grid=cfm_grid, n_layer=cfm_layers) if cfm else None
         self.mid = nn.Conv2d(d_inner, C, 1, bias=False)  # between multiply and residual
         self.out = nn.Conv2d(C, C, 1, bias=False)  # final linear
@@ -195,7 +199,10 @@ class DAMBlock(nn.Module):
         # TIDS
         d = self.tids(xt, xr)
         if self.cfm is not None:
-            d = d + self.cfm(xt, xr)  # CFMW's Add2: the fused streams join TIDS's output
+            # CFMW's Add2: the fused streams join TIDS's output. Joining here, before the gate
+            # and the zero-initialised `mid`, keeps the lossless handover (the block still
+            # returns exactly F_R at init) and leaves the DAM's output format unchanged
+            d = d + self.cfm(xt, xr)
 
         # hadamard product -> linear
         y = self.mid(d * z)
@@ -224,7 +231,9 @@ class DisplacementNet(nn.Module):
             B, T = feat.shape[:2]
             F_T = feat[:, -1]
             # all T-1 (target, reference) pairs in one call, reference-major: every op in the
-            # block is per sample, so this equals one call per reference in fewer kernel launches
+            # block is per sample, so this equals one call per reference (to 6e-7 in FP32) in
+            # fewer kernel launches. CFM's many small ops made the per-reference loop
+            # launch-bound: 96 -> 78 ms per training step with CFM, 96 -> 76 without
             refs = feat[:, :-1].transpose(0, 1).reshape((T - 1) * B, *feat.shape[2:])
             disp = self.blocks[k](F_T.repeat(T - 1, 1, 1, 1), refs)
             disp = disp.view(T - 1, B, *disp.shape[1:]).transpose(0, 1)

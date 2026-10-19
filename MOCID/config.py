@@ -40,6 +40,8 @@ PROFILES = {
 # r0-cfm: R0's settings with CFMW's cross-modality fusion Mamba added to every DAM beside TIDS,
 # the target and reference frames as its two streams (components/cfm.py, branch cfmw-test).
 # Stage 2 also scores every evaluation with the DAM off, to show what the DAM adds.
+# Result (stage 2 from r0_fista_best.pth): best 90.27, final 89.44 AP50, against 90.12 / 89.20
+# without CFM; with the DAM switched off the same model scored higher at 48 of 50 evaluations.
 PROFILES["r0-cfm"] = {**PROFILES["r0"], "DAM_CFM": True, "EVAL_DAM_OFF": True}
 
 
@@ -77,11 +79,14 @@ class Config:
     # from this many training batches (utils.recalibrate_bn); 0 = off. Evaluation only:
     # training is unaffected. Without it, R0-profile runs can show a false collapse.
     BN_RECAL_BATCHES = 300
-    # CFMW's fusion Mamba in the DAM (components/cfm.py): on/off, token grid per frame, layers
+    # CFMW's fusion Mamba in the DAM (components/cfm.py, CFMW-DAM.md). Off by default, so every
+    # other profile builds the DAM exactly as before and its checkpoints still load.
     DAM_CFM = False
-    CFM_GRID = 8
-    CFM_LAYERS = 1
-    # stage 2 also logs AP50/F1 with the DAM switched off (two extra eval_log.csv columns)
+    CFM_GRID = 8  # each frame is pooled to CFM_GRID x CFM_GRID tokens, CFMW's 8 x 8
+    CFM_LAYERS = 1  # stacked fusion layers; CFMW allows several, one keeps the cost to ~3%
+    # stage 2 also scores every evaluation with the DAM switched off (two extra eval_log.csv
+    # columns). The plain DAM turned out to lower AP50 (91.62 off vs 90.12 on), so any new
+    # DAM is judged by this gap, not by its AP50 alone
     EVAL_DAM_OFF = False
 
     STRIDES = [8, 16, 32]

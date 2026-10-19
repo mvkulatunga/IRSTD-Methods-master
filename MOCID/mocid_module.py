@@ -49,6 +49,7 @@ class MOCID(nn.Module):
         **kwargs,
     ):
         super().__init__()
+        # CFMW's fusion beside TIDS in every DAM block; off by default (see model.py)
         self.cfm, self.cfm_grid, self.cfm_layers = cfm, cfm_grid, cfm_layers
         self.num_classes = num_classes
         self.num_frames = num_frames

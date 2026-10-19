@@ -195,7 +195,9 @@ def build_optimizer(model, cfg, epochs, lr=None):
         if not p.requires_grad:  # skips frozen stages
             continue
         # parameters marked _no_weight_decay (Mamba's convention, e.g. components/cfm.py's
-        # A_log, D, dt bias) never decay, even under DECAY_ALL; nothing else sets it
+        # A_log, D, dt bias, B/C scales) never decay, even under DECAY_ALL; nothing else sets it.
+        # Decay pulls them towards 0, which shrinks the scan's state term: under R0's settings a
+        # Mamba's scan parameters received almost no gradient and only decayed (r0-damv2)
         keep = getattr(p, "_no_weight_decay", False) or (p.ndim <= 1 and not decay_all)
         (no_decay if keep else decay).append(p)
 

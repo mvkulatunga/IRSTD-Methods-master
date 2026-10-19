@@ -19,7 +19,9 @@ class MOCID(nn.Module):
         cfm=False, cfm_grid=8, cfm_layers=1,
     ):
         """cfm, cfm_grid, cfm_layers: CFMW's fusion Mamba in the DAM (components/cfm.py);
-        the defaults build the DAM without it."""
+        the defaults build the DAM without it. CFM sits beside TIDS in every DAM block, with the
+        target and the reference frame as its two streams; everything outside the DAM is
+        unchanged."""
         super().__init__()
         ch = [base_channels * 8, base_channels * 16, base_channels * 32]
         self.backbone = SpatioTemporalBackbone(3, base_channels, num_frames, img_size)

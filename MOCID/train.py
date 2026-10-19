@@ -287,6 +287,7 @@ def train_mocid(
 
     stage1_ckpt: skip stage 1 and run stage 2 only, seeded from this stage-1
     checkpoint (e.g. runs/server-r0/fista_best.pth)."""
+    # the profile's DAM options (e.g. r0-cfm adds CFMW's fusion); the defaults build the plain DAM
     model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0], **cfg.dam_kwargs()).to(device)
     model = maybe_compile(model)
 

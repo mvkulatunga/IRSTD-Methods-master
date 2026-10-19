@@ -1,0 +1,166 @@
+[config] profile: r0-cfm  (LR 0.01 -> 0.0001, input 255, decay on all params: True, BatchNorm recomputed before eval: 300 batches)
+[train] artifacts -> runs/r0-cfm/
+========================= STAGE 1: FISTA =========================
+[train] stage 1 skipped: stage 2 seeds from /srv/proj-mamba/mocid-baseline/checkpoints/r0_fista_best.pth
+========================= STAGE 2: DAM =========================
+[stage2] seeded from FISTA given: /srv/proj-mamba/mocid-baseline/checkpoints/r0_fista_best.pth  (disp.* kept at zero-init; 0 non-matching keys skipped)
+[r0-cfm-dam] 1/100  loss 0.9097  lr 3.33e-04
+[r0-cfm-dam] 2/100  loss 0.9357  lr 5.00e-04
+[r0-cfm-dam] eval @ ep2: AP50 88.81  F1 90.01  | DAM off: AP50 88.60  F1 89.97
+[r0-cfm-dam] *** new best AP50 88.81 -> runs/r0-cfm/dam_best.pth
+[r0-cfm-dam] 3/100  loss 0.9647  lr 6.67e-04
+[r0-cfm-dam] 4/100  loss 0.9840  lr 8.33e-04
+[r0-cfm-dam] eval @ ep4: AP50 89.21  F1 89.72  | DAM off: AP50 89.77  F1 90.35
+[r0-cfm-dam] *** new best AP50 89.21 -> runs/r0-cfm/dam_best.pth
+[r0-cfm-dam] 5/100  loss 1.0095  lr 1.00e-03
+[r0-cfm-dam] 6/100  loss 1.0414  lr 1.00e-03
+[r0-cfm-dam] eval @ ep6: AP50 89.20  F1 90.19  | DAM off: AP50 90.35  F1 90.00
+[r0-cfm-dam] 7/100  loss 1.0301  lr 1.00e-03
+[r0-cfm-dam] 8/100  loss 1.0215  lr 9.99e-04
+[r0-cfm-dam] eval @ ep8: AP50 89.70  F1 90.20  | DAM off: AP50 90.85  F1 89.88
+[r0-cfm-dam] *** new best AP50 89.70 -> runs/r0-cfm/dam_best.pth
+[r0-cfm-dam] 9/100  loss 1.0279  lr 9.98e-04
+[r0-cfm-dam] 10/100  loss 1.0315  lr 9.96e-04
+[r0-cfm-dam] eval @ ep10: AP50 89.17  F1 90.49  | DAM off: AP50 90.90  F1 90.21
+[r0-cfm-dam] 11/100  loss 1.0197  lr 9.94e-04
+[r0-cfm-dam] 12/100  loss 1.0282  lr 9.91e-04
+[r0-cfm-dam] eval @ ep12: AP50 89.44  F1 90.43  | DAM off: AP50 90.91  F1 90.05
+[r0-cfm-dam] 13/100  loss 1.0245  lr 9.88e-04
+[r0-cfm-dam] 14/100  loss 1.0167  lr 9.84e-04
+[r0-cfm-dam] eval @ ep14: AP50 89.25  F1 90.01  | DAM off: AP50 91.10  F1 90.02
+[r0-cfm-dam] 15/100  loss 1.0145  lr 9.80e-04
+[r0-cfm-dam] 16/100  loss 1.0125  lr 9.75e-04
+[r0-cfm-dam] eval @ ep16: AP50 89.72  F1 90.56  | DAM off: AP50 91.36  F1 90.22
+[r0-cfm-dam] *** new best AP50 89.72 -> runs/r0-cfm/dam_best.pth
+[r0-cfm-dam] 17/100  loss 1.0208  lr 9.70e-04
+[r0-cfm-dam] 18/100  loss 1.0151  lr 9.64e-04
+[r0-cfm-dam] eval @ ep18: AP50 89.39  F1 90.11  | DAM off: AP50 91.58  F1 89.87
+[r0-cfm-dam] 19/100  loss 1.0007  lr 9.58e-04
+[r0-cfm-dam] 20/100  loss 1.0137  lr 9.52e-04
+[r0-cfm-dam] eval @ ep20: AP50 89.99  F1 89.98  | DAM off: AP50 91.71  F1 89.79
+[r0-cfm-dam] *** new best AP50 89.99 -> runs/r0-cfm/dam_best.pth
+[r0-cfm-dam] 21/100  loss 1.0017  lr 9.45e-04
+[r0-cfm-dam] 22/100  loss 1.0055  lr 9.37e-04
+[r0-cfm-dam] eval @ ep22: AP50 89.74  F1 90.88  | DAM off: AP50 91.58  F1 90.14
+[r0-cfm-dam] 23/100  loss 0.9978  lr 9.29e-04
+[r0-cfm-dam] 24/100  loss 0.9976  lr 9.21e-04
+[r0-cfm-dam] eval @ ep24: AP50 89.54  F1 90.30  | DAM off: AP50 91.82  F1 90.18
+[r0-cfm-dam] 25/100  loss 1.0012  lr 9.12e-04
+[r0-cfm-dam] 26/100  loss 0.9959  lr 9.03e-04
+[r0-cfm-dam] eval @ ep26: AP50 89.55  F1 90.31  | DAM off: AP50 91.76  F1 90.02
+[r0-cfm-dam] 27/100  loss 0.9969  lr 8.94e-04
+[r0-cfm-dam] 28/100  loss 0.9934  lr 8.84e-04
+[r0-cfm-dam] eval @ ep28: AP50 89.41  F1 90.86  | DAM off: AP50 91.74  F1 90.34
+[r0-cfm-dam] 29/100  loss 0.9733  lr 8.73e-04
+[r0-cfm-dam] 30/100  loss 0.9914  lr 8.63e-04
+[r0-cfm-dam] eval @ ep30: AP50 89.73  F1 90.12  | DAM off: AP50 91.97  F1 89.96
+[r0-cfm-dam] 31/100  loss 0.9851  lr 8.52e-04
+[r0-cfm-dam] 32/100  loss 0.9665  lr 8.41e-04
+[r0-cfm-dam] eval @ ep32: AP50 89.59  F1 90.13  | DAM off: AP50 91.99  F1 89.85
+[r0-cfm-dam] 33/100  loss 0.9775  lr 8.29e-04
+[r0-cfm-dam] 34/100  loss 0.9641  lr 8.17e-04
+[r0-cfm-dam] eval @ ep34: AP50 89.63  F1 90.44  | DAM off: AP50 91.95  F1 89.84
+[r0-cfm-dam] 35/100  loss 0.9622  lr 8.05e-04
+[r0-cfm-dam] 36/100  loss 0.9635  lr 7.92e-04
+[r0-cfm-dam] eval @ ep36: AP50 89.60  F1 90.04  | DAM off: AP50 91.75  F1 89.85
+[r0-cfm-dam] 37/100  loss 0.9615  lr 7.79e-04
+[r0-cfm-dam] 38/100  loss 0.9655  lr 7.66e-04
+[r0-cfm-dam] eval @ ep38: AP50 89.83  F1 89.97  | DAM off: AP50 91.93  F1 89.59
+[r0-cfm-dam] 39/100  loss 0.9614  lr 7.53e-04
+[r0-cfm-dam] 40/100  loss 0.9557  lr 7.39e-04
+[r0-cfm-dam] eval @ ep40: AP50 89.42  F1 90.26  | DAM off: AP50 91.73  F1 89.86
+[r0-cfm-dam] 41/100  loss 0.9438  lr 7.26e-04
+[r0-cfm-dam] 42/100  loss 0.9373  lr 7.12e-04
+[r0-cfm-dam] eval @ ep42: AP50 89.68  F1 90.32  | DAM off: AP50 91.60  F1 89.73
+[r0-cfm-dam] 43/100  loss 0.9437  lr 6.98e-04
+[r0-cfm-dam] 44/100  loss 0.9343  lr 6.83e-04
+[r0-cfm-dam] eval @ ep44: AP50 89.75  F1 90.30  | DAM off: AP50 91.77  F1 89.87
+[r0-cfm-dam] 45/100  loss 0.9392  lr 6.69e-04
+[r0-cfm-dam] 46/100  loss 0.9275  lr 6.54e-04
+[r0-cfm-dam] eval @ ep46: AP50 90.00  F1 90.42  | DAM off: AP50 91.76  F1 90.11
+[r0-cfm-dam] *** new best AP50 90.00 -> runs/r0-cfm/dam_best.pth
+[r0-cfm-dam] 47/100  loss 0.9267  lr 6.40e-04
+[r0-cfm-dam] 48/100  loss 0.9260  lr 6.25e-04
+[r0-cfm-dam] eval @ ep48: AP50 89.66  F1 90.31  | DAM off: AP50 91.56  F1 90.16
+[r0-cfm-dam] 49/100  loss 0.9317  lr 6.10e-04
+[r0-cfm-dam] 50/100  loss 0.9209  lr 5.95e-04
+[r0-cfm-dam] eval @ ep50: AP50 89.91  F1 90.56  | DAM off: AP50 91.82  F1 90.04
+[r0-cfm-dam] 51/100  loss 0.9172  lr 5.80e-04
+[r0-cfm-dam] 52/100  loss 0.9101  lr 5.65e-04
+[r0-cfm-dam] eval @ ep52: AP50 89.96  F1 90.41  | DAM off: AP50 91.62  F1 90.02
+[r0-cfm-dam] 53/100  loss 0.9016  lr 5.50e-04
+[r0-cfm-dam] 54/100  loss 0.9017  lr 5.35e-04
+[r0-cfm-dam] eval @ ep54: AP50 89.84  F1 90.36  | DAM off: AP50 91.50  F1 90.11
+[r0-cfm-dam] 55/100  loss 0.8992  lr 5.20e-04
+[r0-cfm-dam] 56/100  loss 0.8905  lr 5.05e-04
+[r0-cfm-dam] eval @ ep56: AP50 89.28  F1 90.15  | DAM off: AP50 91.53  F1 90.02
+[r0-cfm-dam] 57/100  loss 0.8883  lr 4.90e-04
+[r0-cfm-dam] 58/100  loss 0.8841  lr 4.75e-04
+[r0-cfm-dam] eval @ ep58: AP50 90.04  F1 90.05  | DAM off: AP50 91.76  F1 89.94
+[r0-cfm-dam] *** new best AP50 90.04 -> runs/r0-cfm/dam_best.pth
+[r0-cfm-dam] 59/100  loss 0.8746  lr 4.60e-04
+[r0-cfm-dam] 60/100  loss 0.8735  lr 4.46e-04
+[r0-cfm-dam] eval @ ep60: AP50 89.75  F1 90.11  | DAM off: AP50 91.51  F1 89.92
+[r0-cfm-dam] 61/100  loss 0.8648  lr 4.31e-04
+[r0-cfm-dam] 62/100  loss 0.8636  lr 4.17e-04
+[r0-cfm-dam] eval @ ep62: AP50 90.20  F1 90.48  | DAM off: AP50 91.85  F1 89.95
+[r0-cfm-dam] *** new best AP50 90.20 -> runs/r0-cfm/dam_best.pth
+[r0-cfm-dam] 63/100  loss 0.8600  lr 4.02e-04
+[r0-cfm-dam] 64/100  loss 0.8569  lr 3.88e-04
+[r0-cfm-dam] eval @ ep64: AP50 89.94  F1 90.42  | DAM off: AP50 91.80  F1 90.03
+[r0-cfm-dam] 65/100  loss 0.8584  lr 3.74e-04
+[r0-cfm-dam] 66/100  loss 0.8542  lr 3.61e-04
+[r0-cfm-dam] eval @ ep66: AP50 89.49  F1 90.17  | DAM off: AP50 91.49  F1 89.98
+[r0-cfm-dam] 67/100  loss 0.8360  lr 3.47e-04
+[r0-cfm-dam] 68/100  loss 0.8389  lr 3.34e-04
+[r0-cfm-dam] eval @ ep68: AP50 89.89  F1 90.27  | DAM off: AP50 91.31  F1 89.93
+[r0-cfm-dam] 69/100  loss 0.8335  lr 3.21e-04
+[r0-cfm-dam] 70/100  loss 0.8260  lr 3.08e-04
+[r0-cfm-dam] eval @ ep70: AP50 90.27  F1 90.28  | DAM off: AP50 91.40  F1 90.10
+[r0-cfm-dam] *** new best AP50 90.27 -> runs/r0-cfm/dam_best.pth
+[r0-cfm-dam] 71/100  loss 0.8221  lr 2.95e-04
+[r0-cfm-dam] 72/100  loss 0.8170  lr 2.83e-04
+[r0-cfm-dam] eval @ ep72: AP50 90.18  F1 90.50  | DAM off: AP50 91.19  F1 90.03
+[r0-cfm-dam] 73/100  loss 0.8151  lr 2.71e-04
+[r0-cfm-dam] 74/100  loss 0.8086  lr 2.59e-04
+[r0-cfm-dam] eval @ ep74: AP50 90.05  F1 90.34  | DAM off: AP50 91.01  F1 89.85
+[r0-cfm-dam] 75/100  loss 0.8092  lr 2.48e-04
+[r0-cfm-dam] 76/100  loss 0.8003  lr 2.37e-04
+[r0-cfm-dam] eval @ ep76: AP50 89.93  F1 90.28  | DAM off: AP50 90.71  F1 89.77
+[r0-cfm-dam] 77/100  loss 0.7970  lr 2.27e-04
+[r0-cfm-dam] 78/100  loss 0.7927  lr 2.16e-04
+[r0-cfm-dam] eval @ ep78: AP50 89.97  F1 90.27  | DAM off: AP50 90.77  F1 89.86
+[r0-cfm-dam] 79/100  loss 0.7863  lr 2.06e-04
+[r0-cfm-dam] 80/100  loss 0.7840  lr 1.97e-04
+[r0-cfm-dam] eval @ ep80: AP50 89.72  F1 90.26  | DAM off: AP50 90.64  F1 89.85
+[r0-cfm-dam] 81/100  loss 0.7771  lr 1.88e-04
+[r0-cfm-dam] 82/100  loss 0.7655  lr 1.79e-04
+[r0-cfm-dam] eval @ ep82: AP50 89.34  F1 90.38  | DAM off: AP50 90.54  F1 89.77
+[r0-cfm-dam] 83/100  loss 0.7744  lr 1.71e-04
+[r0-cfm-dam] 84/100  loss 0.7678  lr 1.63e-04
+[r0-cfm-dam] eval @ ep84: AP50 89.61  F1 90.44  | DAM off: AP50 90.29  F1 89.69
+[r0-cfm-dam] 85/100  loss 0.7666  lr 1.55e-04
+[r0-cfm-dam] 86/100  loss 0.7538  lr 1.48e-04
+[r0-cfm-dam] eval @ ep86: AP50 89.47  F1 90.39  | DAM off: AP50 90.25  F1 89.46
+[r0-cfm-dam] 87/100  loss 0.7479  lr 1.42e-04
+[r0-cfm-dam] 88/100  loss 0.7549  lr 1.36e-04
+[r0-cfm-dam] eval @ ep88: AP50 89.36  F1 90.36  | DAM off: AP50 90.32  F1 89.77
+[r0-cfm-dam] 89/100  loss 0.7466  lr 1.30e-04
+[r0-cfm-dam] 90/100  loss 0.7476  lr 1.25e-04
+[r0-cfm-dam] eval @ ep90: AP50 89.31  F1 90.24  | DAM off: AP50 90.13  F1 89.58
+[r0-cfm-dam] 91/100  loss 0.7424  lr 1.20e-04
+[r0-cfm-dam] 92/100  loss 0.7351  lr 1.16e-04
+[r0-cfm-dam] eval @ ep92: AP50 89.19  F1 90.31  | DAM off: AP50 90.04  F1 89.55
+[r0-cfm-dam] 93/100  loss 0.7371  lr 1.12e-04
+[r0-cfm-dam] 94/100  loss 0.7264  lr 1.09e-04
+[r0-cfm-dam] eval @ ep94: AP50 89.74  F1 90.49  | DAM off: AP50 90.15  F1 89.55
+[r0-cfm-dam] 95/100  loss 0.7265  lr 1.06e-04
+[r0-cfm-dam] 96/100  loss 0.7201  lr 1.04e-04
+[r0-cfm-dam] eval @ ep96: AP50 89.83  F1 90.48  | DAM off: AP50 89.65  F1 89.32
+[r0-cfm-dam] 97/100  loss 0.7234  lr 1.02e-04
+[r0-cfm-dam] 98/100  loss 0.7210  lr 1.01e-04
+[r0-cfm-dam] eval @ ep98: AP50 89.34  F1 90.36  | DAM off: AP50 89.46  F1 89.32
+[r0-cfm-dam] 99/100  loss 0.7223  lr 1.00e-04
+[r0-cfm-dam] 100/100  loss 0.7208  lr 1.00e-04
+[r0-cfm-dam] eval @ ep100: AP50 89.44  F1 90.37  | DAM off: AP50 89.56  F1 89.25
+[r0-cfm-dam] saved stage checkpoint -> runs/r0-cfm/dam.pth

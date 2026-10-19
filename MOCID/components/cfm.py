@@ -108,12 +108,19 @@ class BiMamba(nn.Module):
 
     def forward(self, x):
         B, L, _ = x.shape
+        # Mamba's two streams: x goes through the scan, z becomes the output gate
         x, z = self.in_proj(x).chunk(2, dim=-1)  # (B,L,E) each
+        # local mixing before the scan, as Mamba's short conv; done on each frame's 2D grid so
+        # neighbouring cells mix, and the two frames' grids don't bleed into each other
         g, K = _grids(x, self.grid)
         u = _tokens(F.silu(self.conv(g)), B, K)  # (B,L,E)
 
+        # selection: dt (how much each token writes / how fast the state forgets), B (what is
+        # written) and C (what is read) all depend on the token, as in Mamba
         dt, Bp, Cp = torch.split(self.x_proj(u), [self.R, self.N, self.N], dim=-1)
         dt = self.dt_proj(dt).transpose(1, 2)  # (B,E,L)
+        # BC normalisation (departure from CFMW, see the module docstring): unit-scale B and C
+        # keep the state's contribution, and so its gradients, from starving under SGD
         Bp = self._rms(Bp.transpose(1, 2), self.B_norm)  # (B,N,L)
         Cp = self._rms(Cp.transpose(1, 2), self.C_norm)
         u = u.transpose(1, 2)  # (B,E,L)
@@ -133,8 +140,10 @@ class BiMamba(nn.Module):
             None,
         )
         y = torch.nan_to_num(y, nan=0.0, posinf=1e4, neginf=-1e4)
+        # forward + reverse scans summed (the reverse one flipped back into token order), so
+        # every token has seen the whole joint sequence, both frames, from both sides
         y = (y[:, : self.E] + y[:, self.E :].flip(-1)).transpose(1, 2)  # (B,L,E)
-        return self.out_proj(y * F.silu(z))
+        return self.out_proj(y * F.silu(z))  # Mamba's gate, then back to C channels
 
 
 class CFMLayer(nn.Module):
@@ -150,6 +159,8 @@ class CFMLayer(nn.Module):
         self.dwconv = nn.Conv2d(C, C, 3, padding=1, groups=C)
 
     def forward(self, x):
+        # global exchange across both frames (the scan), then a local 3x3 refinement within each
+        # frame's grid, with a residual around the conv only, as in CFMW's CrossMamba
         g, K = _grids(self.mamba(self.norm(x)), self.grid)
         return _tokens(self.dwconv(g) + g, x.shape[0], K)
 
@@ -172,12 +183,24 @@ class CrossFrameMamba(nn.Module):
     def forward(self, xt, xr):
         B, C, H, W = xt.shape
         P = self.grid
+        # 1. pool each frame to a coarse P x P summary of its whole layout (CFMW: 8 x 8). This
+        #    branch is about scene-wide context, so it gives up detail; TIDS keeps the detail
         t = F.adaptive_avg_pool2d(xt, P).flatten(2)  # (B,C,P*P)
         r = F.adaptive_avg_pool2d(xr, P).flatten(2)
+        # 2. channel swap (CFMW's TokenSwapMamba): every token now also holds the other frame's
+        #    features at the same place, a free first exchange before any learned mixing
         t, r = channel_swap(t, r)
+        # 3. one joint sequence [target tokens ; reference tokens]; the learned position
+        #    embedding tells the scan which frame and which grid cell each token comes from
         x = torch.cat([t, r], dim=2).transpose(1, 2) + self.pos_emb  # (B, 2*P*P, C)
+        # 4. scan the joint sequence: the state carries one frame's content into the other's
+        #    tokens, so every token sees the other frame's whole layout (cross-attention-like,
+        #    in linear time); both directions, so the target also sees the reference
         for layer in self.layers:
             x = layer(x)
+        # 5. split back into the two frames and return to full resolution. CFMW adds each
+        #    stream's output to its own stream; the DAM has one output map (TIDS merges its
+        #    scans the same way), so the two frames' outputs are summed
         x = self.ln_f(x).transpose(1, 2).reshape(B, C, 2, P, P)
-        fused = x[:, :, 0] + x[:, :, 1]  # both streams' outputs, merged as TIDS merges its scans
+        fused = x[:, :, 0] + x[:, :, 1]
         return F.interpolate(fused, size=(H, W), mode="bilinear", align_corners=False)

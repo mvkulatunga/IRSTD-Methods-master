@@ -84,8 +84,11 @@ state term fell to ~0% of its output. So here:
 
 - The two-direction scan matches a step-by-step reference implementation exactly.
 - Channel swap and token/grid reshapes are correct; each frame keeps its own rows.
-- **Handover:** switching a fresh DAM on changes the head outputs by 0 in full fp32. Under TF32
-  it's 6.4e-4, identical with and without CFM; that's the DAM's identity `out` conv rounding.
+- **Handover:** with a fresh DAM on the trained stage-1 model, every reference slot equals F_R
+  exactly in full FP32 (maximum relative difference 0 over 5 validation batches), and the head
+  outputs are identical with the DAM on and off. Under TF32 the difference is 4.2e-4 for the
+  slots and 4.7e-4 for the head outputs. The DAM without CFM shows the same, so this is rounding
+  in the identity-initialised `out` conv, not CFM.
 - CFM's memory is active at initialisation: zeroing B and C changes its output by 6–32%
   (r0-damv2's DAM: ~1%).
 - 40 real training steps: losses and weights finite, and all 54 CFM tensors move.
@@ -95,6 +98,12 @@ state term fell to ~0% of its output. So here:
   76 ms. With CFM a step takes 78 ms.
 
 Size: CFM adds 1.26 M parameters. DAM 3.03 → 4.29 M, MOCID 12.53 → 13.78 M (paper: 13.05 M).
+
+| Scale (channels) | DAM block without CFM | CFM branch | DAM block with CFM |
+|---|---|---|---|
+| 1/8 (128) | 0.305 M | 0.077 M | 0.382 M |
+| 1/16 (256) | 0.737 M | 0.257 M | 0.993 M |
+| 1/32 (512) | 1.993 M | 0.923 M | 2.916 M |
 
 ## Run and compare
 
@@ -117,3 +126,26 @@ earlier findings matter for reading the result:
 
 So judge CFM by its DAM-on vs DAM-off gap and by data15 recall, and confirm any gain with a
 second seed.
+
+## Result (`r0-cfm`, 16–17 Oct 2026)
+
+Stage 2 only, 100 epochs, from `r0_fista_best.pth`, 1× L40S, about 8 h. VOC AP50 on the
+4,767 validation frames; logs in `results/r0-cfm/`.
+
+| | Best (epoch) | Final (epoch 100) | Mean of 50 evaluations |
+|---|---|---|---|
+| DAM with CFM | 90.27 (70) | 89.44 (F1 90.37) | 89.64 |
+| DAM without CFM (R0-DAM-fixed) | 90.12 (52) | 89.20 (F1 89.66) | 89.49 |
+| DAM with CFM, scored with the DAM off | 91.99 (32) | 89.56 (F1 89.25) | 91.09 |
+
+- **CFM made no measurable difference.** +0.15 at best and on average are within the
+  run-to-run spread of the other DAM variants (Leah's tree-scan and raster-scan runs: 89.6–89.7).
+- **The DAM still lowers AP50, with or without CFM.** The same model scored higher with the DAM
+  switched off at 48 of 50 evaluations (1.45 AP50 on average). The gap closes at the end only
+  because the DAM-off score falls as the retrained FPN and head overfit.
+- **F1 is the exception.** From epoch 4 on it is slightly higher with the DAM on.
+
+A later check (18 Oct) on the plain DAM explains why a better scan can't help: AP50 is the same
+whether the DAM's correction is computed from the true reference (90.12), an unrelated clip's
+reference (90.07), or left out entirely (90.18). The detector gets no usable motion information
+from the correction, so the limitation is not in the scan.
