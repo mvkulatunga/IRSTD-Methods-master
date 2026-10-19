@@ -1,0 +1,177 @@
+nohup: ignoring input
+/srv/proj-mamba/venv/lib64/python3.12/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+/srv/proj-mamba/mocid-baseline/deps/VMamba/classification/models/csms6s.py:73: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_fwd
+/srv/proj-mamba/mocid-baseline/deps/VMamba/classification/models/csms6s.py:90: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @torch.cuda.amp.custom_bwd
+/srv/proj-mamba/mocid-baseline/deps/VMamba/classification/models/mamba2/ssd_combined.py:763: FutureWarning: `torch.cuda.amp.custom_fwd(args...)` is deprecated. Please use `torch.amp.custom_fwd(args..., device_type='cuda')` instead.
+  @custom_fwd
+/srv/proj-mamba/mocid-baseline/deps/VMamba/classification/models/mamba2/ssd_combined.py:841: FutureWarning: `torch.cuda.amp.custom_bwd(args...)` is deprecated. Please use `torch.amp.custom_bwd(args..., device_type='cuda')` instead.
+  @custom_bwd
+[config] profile: r0-tree  (LR 0.01 -> 0.0001, input 255, decay on all params: True, BatchNorm recomputed before eval: 300 batches)
+[train] artifacts -> runs/tree-d8-leah-1/
+Loaded 8942 clips of length 5 from /srv/proj-mamba/mocid-baseline/splits/daub_train_server.txt
+Loaded 4767 clips of length 5 from /srv/proj-mamba/mocid-baseline/splits/daub_val_server.txt
+========================= STAGE 1: FISTA =========================
+[train] stage 1 skipped: stage 2 seeds from /srv/proj-mamba/mocid-baseline/checkpoints/r0_fista_best.pth
+========================= STAGE 2: DAM =========================
+[stage2] seeded from FISTA given: /srv/proj-mamba/mocid-baseline/checkpoints/r0_fista_best.pth  (disp.* kept at zero-init; 0 non-matching keys skipped)
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  float(reg_weight * loss_iou / num_fg),
+[tree-d8-leah-1-dam] 1/100  loss 0.9038  lr 3.33e-04
+[tree-d8-leah-1-dam] 2/100  loss 0.9349  lr 5.00e-04
+[tree-d8-leah-1-dam] eval @ ep2: AP50 89.25  F1 90.40
+[tree-d8-leah-1-dam] *** new best AP50 89.25 -> runs/tree-d8-leah-1/dam_best.pth
+[tree-d8-leah-1-dam] 3/100  loss 0.9587  lr 6.67e-04
+[tree-d8-leah-1-dam] 4/100  loss 0.9764  lr 8.33e-04
+[tree-d8-leah-1-dam] eval @ ep4: AP50 89.18  F1 89.81
+[tree-d8-leah-1-dam] 5/100  loss 1.0116  lr 1.00e-03
+[tree-d8-leah-1-dam] 6/100  loss 1.0338  lr 1.00e-03
+[tree-d8-leah-1-dam] eval @ ep6: AP50 88.96  F1 89.76
+[tree-d8-leah-1-dam] 7/100  loss 1.0278  lr 1.00e-03
+[tree-d8-leah-1-dam] 8/100  loss 1.0261  lr 9.99e-04
+[tree-d8-leah-1-dam] eval @ ep8: AP50 89.69  F1 90.28
+[tree-d8-leah-1-dam] *** new best AP50 89.69 -> runs/tree-d8-leah-1/dam_best.pth
+[tree-d8-leah-1-dam] 9/100  loss 1.0265  lr 9.98e-04
+[tree-d8-leah-1-dam] 10/100  loss 1.0202  lr 9.96e-04
+[tree-d8-leah-1-dam] eval @ ep10: AP50 89.55  F1 90.35
+[tree-d8-leah-1-dam] 11/100  loss 1.0225  lr 9.94e-04
+[tree-d8-leah-1-dam] 12/100  loss 1.0247  lr 9.91e-04
+[tree-d8-leah-1-dam] eval @ ep12: AP50 89.53  F1 90.28
+[tree-d8-leah-1-dam] 13/100  loss 1.0272  lr 9.88e-04
+[tree-d8-leah-1-dam] 14/100  loss 1.0273  lr 9.84e-04
+[tree-d8-leah-1-dam] eval @ ep14: AP50 89.67  F1 90.53
+[tree-d8-leah-1-dam] 15/100  loss 1.0262  lr 9.80e-04
+[tree-d8-leah-1-dam] 16/100  loss 1.0224  lr 9.75e-04
+[tree-d8-leah-1-dam] eval @ ep16: AP50 89.79  F1 90.64
+[tree-d8-leah-1-dam] *** new best AP50 89.79 -> runs/tree-d8-leah-1/dam_best.pth
+[tree-d8-leah-1-dam] 17/100  loss 1.0101  lr 9.70e-04
+[tree-d8-leah-1-dam] 18/100  loss 1.0146  lr 9.64e-04
+[tree-d8-leah-1-dam] eval @ ep18: AP50 89.47  F1 90.50
+[tree-d8-leah-1-dam] 19/100  loss 1.0174  lr 9.58e-04
+[tree-d8-leah-1-dam] 20/100  loss 1.0085  lr 9.52e-04
+[tree-d8-leah-1-dam] eval @ ep20: AP50 90.12  F1 90.40
+[tree-d8-leah-1-dam] *** new best AP50 90.12 -> runs/tree-d8-leah-1/dam_best.pth
+[tree-d8-leah-1-dam] 21/100  loss 1.0123  lr 9.45e-04
+[tree-d8-leah-1-dam] 22/100  loss 1.0074  lr 9.37e-04
+[tree-d8-leah-1-dam] eval @ ep22: AP50 89.60  F1 90.61
+[tree-d8-leah-1-dam] 23/100  loss 1.0114  lr 9.29e-04
+[tree-d8-leah-1-dam] 24/100  loss 1.0001  lr 9.21e-04
+[tree-d8-leah-1-dam] eval @ ep24: AP50 89.76  F1 90.67
+[tree-d8-leah-1-dam] 25/100  loss 0.9973  lr 9.12e-04
+[tree-d8-leah-1-dam] 26/100  loss 1.0027  lr 9.03e-04
+[tree-d8-leah-1-dam] eval @ ep26: AP50 89.99  F1 90.73
+[tree-d8-leah-1-dam] 27/100  loss 0.9955  lr 8.94e-04
+[tree-d8-leah-1-dam] 28/100  loss 0.9903  lr 8.84e-04
+[tree-d8-leah-1-dam] eval @ ep28: AP50 90.09  F1 90.88
+[tree-d8-leah-1-dam] 29/100  loss 0.9913  lr 8.73e-04
+[tree-d8-leah-1-dam] 30/100  loss 0.9859  lr 8.63e-04
+[tree-d8-leah-1-dam] eval @ ep30: AP50 89.95  F1 90.98
+[tree-d8-leah-1-dam] 31/100  loss 0.9818  lr 8.52e-04
+[tree-d8-leah-1-dam] 32/100  loss 0.9841  lr 8.41e-04
+[tree-d8-leah-1-dam] eval @ ep32: AP50 89.79  F1 90.73
+[tree-d8-leah-1-dam] 33/100  loss 0.9776  lr 8.29e-04
+[tree-d8-leah-1-dam] 34/100  loss 0.9782  lr 8.17e-04
+[tree-d8-leah-1-dam] eval @ ep34: AP50 90.01  F1 90.84
+[tree-d8-leah-1-dam] 35/100  loss 0.9729  lr 8.05e-04
+[tree-d8-leah-1-dam] 36/100  loss 0.9650  lr 7.92e-04
+[tree-d8-leah-1-dam] eval @ ep36: AP50 89.62  F1 90.69
+[tree-d8-leah-1-dam] 37/100  loss 0.9629  lr 7.79e-04
+[tree-d8-leah-1-dam] 38/100  loss 0.9511  lr 7.66e-04
+[tree-d8-leah-1-dam] eval @ ep38: AP50 90.02  F1 90.65
+[tree-d8-leah-1-dam] 39/100  loss 0.9553  lr 7.53e-04
+[tree-d8-leah-1-dam] 40/100  loss 0.9526  lr 7.39e-04
+[tree-d8-leah-1-dam] eval @ ep40: AP50 89.92  F1 90.62
+[tree-d8-leah-1-dam] 41/100  loss 0.9514  lr 7.26e-04
+[tree-d8-leah-1-dam] 42/100  loss 0.9506  lr 7.12e-04
+[tree-d8-leah-1-dam] eval @ ep42: AP50 89.68  F1 90.52
+[tree-d8-leah-1-dam] 43/100  loss 0.9419  lr 6.98e-04
+[tree-d8-leah-1-dam] 44/100  loss 0.9472  lr 6.83e-04
+[tree-d8-leah-1-dam] eval @ ep44: AP50 89.66  F1 90.52
+[tree-d8-leah-1-dam] 45/100  loss 0.9385  lr 6.69e-04
+[tree-d8-leah-1-dam] 46/100  loss 0.9379  lr 6.54e-04
+[tree-d8-leah-1-dam] eval @ ep46: AP50 89.60  F1 90.35
+[tree-d8-leah-1-dam] 47/100  loss 0.9284  lr 6.40e-04
+[tree-d8-leah-1-dam] 48/100  loss 0.9298  lr 6.25e-04
+[tree-d8-leah-1-dam] eval @ ep48: AP50 89.48  F1 90.42
+[tree-d8-leah-1-dam] 49/100  loss 0.9298  lr 6.10e-04
+[tree-d8-leah-1-dam] 50/100  loss 0.9241  lr 5.95e-04
+[tree-d8-leah-1-dam] eval @ ep50: AP50 89.61  F1 90.11
+[tree-d8-leah-1-dam] 51/100  loss 0.9109  lr 5.80e-04
+[tree-d8-leah-1-dam] 52/100  loss 0.9150  lr 5.65e-04
+[tree-d8-leah-1-dam] eval @ ep52: AP50 89.69  F1 90.25
+[tree-d8-leah-1-dam] 53/100  loss 0.9060  lr 5.50e-04
+[tree-d8-leah-1-dam] 54/100  loss 0.9079  lr 5.35e-04
+[tree-d8-leah-1-dam] eval @ ep54: AP50 89.83  F1 90.21
+[tree-d8-leah-1-dam] 55/100  loss 0.8953  lr 5.20e-04
+[tree-d8-leah-1-dam] 56/100  loss 0.8953  lr 5.05e-04
+[tree-d8-leah-1-dam] eval @ ep56: AP50 89.83  F1 90.39
+[tree-d8-leah-1-dam] 57/100  loss 0.8907  lr 4.90e-04
+[tree-d8-leah-1-dam] 58/100  loss 0.8862  lr 4.75e-04
+[tree-d8-leah-1-dam] eval @ ep58: AP50 90.13  F1 90.53
+[tree-d8-leah-1-dam] *** new best AP50 90.13 -> runs/tree-d8-leah-1/dam_best.pth
+[tree-d8-leah-1-dam] 59/100  loss 0.8806  lr 4.60e-04
+[tree-d8-leah-1-dam] 60/100  loss 0.8742  lr 4.46e-04
+[tree-d8-leah-1-dam] eval @ ep60: AP50 89.59  F1 90.40
+[tree-d8-leah-1-dam] 61/100  loss 0.8751  lr 4.31e-04
+[tree-d8-leah-1-dam] 62/100  loss 0.8721  lr 4.17e-04
+[tree-d8-leah-1-dam] eval @ ep62: AP50 89.58  F1 90.22
+[tree-d8-leah-1-dam] 63/100  loss 0.8641  lr 4.02e-04
+[tree-d8-leah-1-dam] 64/100  loss 0.8625  lr 3.88e-04
+[tree-d8-leah-1-dam] eval @ ep64: AP50 89.50  F1 90.12
+[tree-d8-leah-1-dam] 65/100  loss 0.8584  lr 3.74e-04
+[tree-d8-leah-1-dam] 66/100  loss 0.8514  lr 3.61e-04
+[tree-d8-leah-1-dam] eval @ ep66: AP50 89.61  F1 90.14
+[tree-d8-leah-1-dam] 67/100  loss 0.8535  lr 3.47e-04
+[tree-d8-leah-1-dam] 68/100  loss 0.8478  lr 3.34e-04
+[tree-d8-leah-1-dam] eval @ ep68: AP50 89.73  F1 90.36
+[tree-d8-leah-1-dam] 69/100  loss 0.8438  lr 3.21e-04
+[tree-d8-leah-1-dam] 70/100  loss 0.8430  lr 3.08e-04
+[tree-d8-leah-1-dam] eval @ ep70: AP50 89.33  F1 90.03
+[tree-d8-leah-1-dam] 71/100  loss 0.8327  lr 2.95e-04
+[tree-d8-leah-1-dam] 72/100  loss 0.8280  lr 2.83e-04
+[tree-d8-leah-1-dam] eval @ ep72: AP50 89.26  F1 90.01
+[tree-d8-leah-1-dam] 73/100  loss 0.8211  lr 2.71e-04
+[tree-d8-leah-1-dam] 74/100  loss 0.8207  lr 2.59e-04
+[tree-d8-leah-1-dam] eval @ ep74: AP50 89.44  F1 89.90
+[tree-d8-leah-1-dam] 75/100  loss 0.8207  lr 2.48e-04
+[tree-d8-leah-1-dam] 76/100  loss 0.8128  lr 2.37e-04
+[tree-d8-leah-1-dam] eval @ ep76: AP50 89.33  F1 89.95
+[tree-d8-leah-1-dam] 77/100  loss 0.8110  lr 2.27e-04
+[tree-d8-leah-1-dam] 78/100  loss 0.8017  lr 2.16e-04
+[tree-d8-leah-1-dam] eval @ ep78: AP50 89.26  F1 89.94
+[tree-d8-leah-1-dam] 79/100  loss 0.7984  lr 2.06e-04
+[tree-d8-leah-1-dam] 80/100  loss 0.7982  lr 1.97e-04
+[tree-d8-leah-1-dam] eval @ ep80: AP50 89.28  F1 90.08
+[tree-d8-leah-1-dam] 81/100  loss 0.7872  lr 1.88e-04
+[tree-d8-leah-1-dam] 82/100  loss 0.7865  lr 1.79e-04
+[tree-d8-leah-1-dam] eval @ ep82: AP50 89.18  F1 89.87
+[tree-d8-leah-1-dam] 83/100  loss 0.7748  lr 1.71e-04
+[tree-d8-leah-1-dam] 84/100  loss 0.7750  lr 1.63e-04
+[tree-d8-leah-1-dam] eval @ ep84: AP50 89.47  F1 90.19
+[tree-d8-leah-1-dam] 85/100  loss 0.7681  lr 1.55e-04
+[tree-d8-leah-1-dam] 86/100  loss 0.7686  lr 1.48e-04
+[tree-d8-leah-1-dam] eval @ ep86: AP50 89.42  F1 90.14
+[tree-d8-leah-1-dam] 87/100  loss 0.7661  lr 1.42e-04
+[tree-d8-leah-1-dam] 88/100  loss 0.7601  lr 1.36e-04
+[tree-d8-leah-1-dam] eval @ ep88: AP50 89.27  F1 90.10
+[tree-d8-leah-1-dam] 89/100  loss 0.7615  lr 1.30e-04
+[tree-d8-leah-1-dam] 90/100  loss 0.7576  lr 1.25e-04
+[tree-d8-leah-1-dam] eval @ ep90: AP50 89.01  F1 90.19
+[tree-d8-leah-1-dam] 91/100  loss 0.7532  lr 1.20e-04
+[tree-d8-leah-1-dam] 92/100  loss 0.7542  lr 1.16e-04
+[tree-d8-leah-1-dam] eval @ ep92: AP50 89.12  F1 89.96
+[tree-d8-leah-1-dam] 93/100  loss 0.7451  lr 1.12e-04
+[tree-d8-leah-1-dam] 94/100  loss 0.7382  lr 1.09e-04
+[tree-d8-leah-1-dam] eval @ ep94: AP50 88.95  F1 89.96
+[tree-d8-leah-1-dam] 95/100  loss 0.7371  lr 1.06e-04
+[tree-d8-leah-1-dam] 96/100  loss 0.7406  lr 1.04e-04
+[tree-d8-leah-1-dam] eval @ ep96: AP50 89.17  F1 90.07
+[tree-d8-leah-1-dam] 97/100  loss 0.7365  lr 1.02e-04
+[tree-d8-leah-1-dam] 98/100  loss 0.7346  lr 1.01e-04
+[tree-d8-leah-1-dam] eval @ ep98: AP50 89.00  F1 90.01
+[tree-d8-leah-1-dam] 99/100  loss 0.7271  lr 1.00e-04
+[tree-d8-leah-1-dam] 100/100  loss 0.7368  lr 1.00e-04
+[tree-d8-leah-1-dam] eval @ ep100: AP50 88.95  F1 89.99
+[tree-d8-leah-1-dam] saved stage checkpoint -> runs/tree-d8-leah-1/dam.pth
