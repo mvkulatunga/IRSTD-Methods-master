@@ -150,14 +150,17 @@ class DAMBlock(nn.Module):
     features plus a learned displacement correction, out(F_R + mid(TIDS * gate)).
     """
 
-    def __init__(self, C, d_state=16, expand=1, theta=0.7):
+    # [mamba-tree] tids_cls added so the scan can be swapped; the default TIDS keeps the baseline
+    def __init__(self, C, d_state=16, expand=1, theta=0.7, tids_cls=TIDS):
         super().__init__()
         d_inner = C * expand
         self.norm = nn.GroupNorm(1, C)  # LayerNorm over channels
         self.in_x = nn.Conv2d(C, d_inner, 1, bias=False)  # SSM stream
         self.dw = nn.Conv2d(d_inner, d_inner, 3, padding=1, groups=d_inner, bias=True)
         self.in_z = nn.Conv2d(C, d_inner, 1, bias=False)  # gate stream
-        self.tids = TIDS(C, d_state=d_state, expand=expand, theta=theta)
+        # [mamba-tree] was TIDS(...). tids_cls picks the scan: TIDS (bidirectional raster) or a
+        # subclass such as dam_tree.TreeTIDS; dam.py never imports the variants, so no cycle
+        self.tids = tids_cls(C, d_state=d_state, expand=expand, theta=theta)
         self.mid = nn.Conv2d(d_inner, C, 1, bias=False)  # between multiply and residual
         self.out = nn.Conv2d(C, C, 1, bias=False)  # final linear
 
@@ -199,10 +202,14 @@ class DAMBlock(nn.Module):
 class DisplacementNet(nn.Module):
     """DAM over every scale and reference frame; drop-in for MOCID.disp."""
 
-    def __init__(self, channels, d_state=16, expand=1, theta=0.7):
+    # [mamba-tree] tids_cls added and passed to every DAMBlock; default TIDS keeps the baseline
+    def __init__(self, channels, d_state=16, expand=1, theta=0.7, tids_cls=TIDS):
         super().__init__()
         self.blocks = nn.ModuleList(
-            [DAMBlock(c, d_state=d_state, expand=expand, theta=theta) for c in channels]
+            [
+                DAMBlock(c, d_state=d_state, expand=expand, theta=theta, tids_cls=tids_cls)
+                for c in channels
+            ]
         )
 
     def forward(self, feats_by_scale):

@@ -276,7 +276,10 @@ def train_mocid(
 
     stage1_ckpt: skip stage 1 and run stage 2 only, seeded from this stage-1
     checkpoint (e.g. runs/server-r0/fista_best.pth)."""
-    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]).to(device)
+    # [mamba-tree] d_state and scan now come from the config (defaults match the old behaviour)
+    model = MOCID(
+        num_frames=cfg.T, img_size=cfg.IMG_SIZE[0], d_state=cfg.D_STATE, scan=cfg.SCAN
+    ).to(device)
     model = maybe_compile(model)
 
     ensure_runs_dir()

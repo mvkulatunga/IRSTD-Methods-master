@@ -37,6 +37,8 @@ PROFILES = {
         "BN_RECAL_BATCHES": 300,
     },
 }
+# [mamba-tree] R0 settings with the DAM's raster scan swapped for the MambaTree scan
+PROFILES["r0-tree"] = {**PROFILES["r0"], "SCAN": "tree"}
 
 
 class Config:
@@ -76,6 +78,13 @@ class Config:
 
     STRIDES = [8, 16, 32]
     NUM_CLASSES = 1
+
+    # [mamba-tree] DAM scan: "bidir" = the paper's bidirectional raster scan, "tree" = MambaTree's
+    # MST scan (components/dam_tree.py). Checkpoints only load into the scan they were
+    # trained with, so evaluate with the same SCAN / D_STATE (or profile) as training.
+    # D_STATE was hard-coded (32) in model.py; the default here keeps that value.
+    SCAN = os.environ.get("MOCID_SCAN", "bidir")
+    D_STATE = int(os.environ.get("MOCID_D_STATE", 32))
 
     # ---- dataset paths ---------------------------------------------------- #
     # Override from the environment (Colab / CI). MOCID_DATASET selects a

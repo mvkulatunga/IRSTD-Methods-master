@@ -1,0 +1,145 @@
+diff --git a/MOCID/components/dam.py b/MOCID/components/dam.py
+index 4c40fb1..42b904f 100644
+--- a/MOCID/components/dam.py
++++ b/MOCID/components/dam.py
+@@ -150,14 +150,17 @@ class DAMBlock(nn.Module):
+     features plus a learned displacement correction, out(F_R + mid(TIDS * gate)).
+     """
+ 
+-    def __init__(self, C, d_state=16, expand=1, theta=0.7):
++    # [mamba-tree] tids_cls added so the scan can be swapped; the default TIDS keeps the baseline
++    def __init__(self, C, d_state=16, expand=1, theta=0.7, tids_cls=TIDS):
+         super().__init__()
+         d_inner = C * expand
+         self.norm = nn.GroupNorm(1, C)  # LayerNorm over channels
+         self.in_x = nn.Conv2d(C, d_inner, 1, bias=False)  # SSM stream
+         self.dw = nn.Conv2d(d_inner, d_inner, 3, padding=1, groups=d_inner, bias=True)
+         self.in_z = nn.Conv2d(C, d_inner, 1, bias=False)  # gate stream
+-        self.tids = TIDS(C, d_state=d_state, expand=expand, theta=theta)
++        # [mamba-tree] was TIDS(...). tids_cls picks the scan: TIDS (bidirectional raster) or a
++        # subclass such as dam_tree.TreeTIDS; dam.py never imports the variants, so no cycle
++        self.tids = tids_cls(C, d_state=d_state, expand=expand, theta=theta)
+         self.mid = nn.Conv2d(d_inner, C, 1, bias=False)  # between multiply and residual
+         self.out = nn.Conv2d(C, C, 1, bias=False)  # final linear
+ 
+@@ -199,10 +202,14 @@ class DAMBlock(nn.Module):
+ class DisplacementNet(nn.Module):
+     """DAM over every scale and reference frame; drop-in for MOCID.disp."""
+ 
+-    def __init__(self, channels, d_state=16, expand=1, theta=0.7):
++    # [mamba-tree] tids_cls added and passed to every DAMBlock; default TIDS keeps the baseline
++    def __init__(self, channels, d_state=16, expand=1, theta=0.7, tids_cls=TIDS):
+         super().__init__()
+         self.blocks = nn.ModuleList(
+-            [DAMBlock(c, d_state=d_state, expand=expand, theta=theta) for c in channels]
++            [
++                DAMBlock(c, d_state=d_state, expand=expand, theta=theta, tids_cls=tids_cls)
++                for c in channels
++            ]
+         )
+ 
+     def forward(self, feats_by_scale):
+diff --git a/MOCID/config.py b/MOCID/config.py
+index d2d78e3..6e91bfa 100644
+--- a/MOCID/config.py
++++ b/MOCID/config.py
+@@ -37,6 +37,8 @@ PROFILES = {
+         "BN_RECAL_BATCHES": 300,
+     },
+ }
++# [mamba-tree] R0 settings with the DAM's raster scan swapped for the MambaTree scan
++PROFILES["r0-tree"] = {**PROFILES["r0"], "SCAN": "tree"}
+ 
+ 
+ class Config:
+@@ -77,6 +79,13 @@ class Config:
+     STRIDES = [8, 16, 32]
+     NUM_CLASSES = 1
+ 
++    # [mamba-tree] DAM scan: "bidir" = the paper's bidirectional raster scan, "tree" = MambaTree's
++    # MST scan (components/dam_tree.py). Checkpoints only load into the scan they were
++    # trained with, so evaluate with the same SCAN / D_STATE (or profile) as training.
++    # D_STATE was hard-coded (32) in model.py; the default here keeps that value.
++    SCAN = os.environ.get("MOCID_SCAN", "bidir")
++    D_STATE = int(os.environ.get("MOCID_D_STATE", 32))
++
+     # ---- dataset paths ---------------------------------------------------- #
+     # Override from the environment (Colab / CI). MOCID_DATASET selects a
+     # built-in split pair under MOCID_DATA_ROOT; MOCID_TRAIN_PATH /
+diff --git a/MOCID/main.py b/MOCID/main.py
+index 929b73c..4287168 100644
+--- a/MOCID/main.py
++++ b/MOCID/main.py
+@@ -74,9 +74,12 @@ def parse_args():
+ 
+ def build_model(cfg, device, name="MOCID"):
+     """-> the model called name (a key of MODELS) on device."""
+-    return MODELS[name](
+-        num_classes=cfg.NUM_CLASSES, num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]
+-    ).to(device)
++    # [mamba-tree] MOCID also gets d_state and scan from the config; the ablation models have
++    # no DAM, so they are built exactly as before
++    kwargs = dict(num_classes=cfg.NUM_CLASSES, num_frames=cfg.T, img_size=cfg.IMG_SIZE[0])
++    if name == "MOCID":
++        kwargs.update(d_state=cfg.D_STATE, scan=cfg.SCAN)
++    return MODELS[name](**kwargs).to(device)
+ 
+ 
+ def load_weights(model, ckpt_path):
+diff --git a/MOCID/model.py b/MOCID/model.py
+index 25bca3a..76eec7a 100644
+--- a/MOCID/model.py
++++ b/MOCID/model.py
+@@ -7,21 +7,33 @@ from components.components import (
+     TemporalPooling,
+     YOLOXHead,
+ )
+-from components.dam import DisplacementNet
++# [mamba-tree] TIDS and TreeTIDS imported so MOCID can choose the DAM scan
++from components.dam import TIDS, DisplacementNet
++from components.dam_tree import TreeTIDS
+ from utils.losses import YOLOLoss
+ 
++# [mamba-tree] DAM scan variants, chosen by Config.SCAN
++SCANS = {"bidir": TIDS, "tree": TreeTIDS}
++
+ 
+ class MOCID(nn.Module):
+     """Backbone -> DAM -> temporal pooling -> FPN -> YOLOX head."""
+ 
+     def __init__(
+-        self, num_classes=1, num_frames=5, img_size=512, base_channels=16, d_state=32
++        self, num_classes=1, num_frames=5, img_size=512, base_channels=16, d_state=32,
++        scan="bidir",  # [mamba-tree] new: "bidir" (paper) or "tree" (MambaTree)
+     ):
+         super().__init__()
++        # [mamba-tree] fail early on a typo rather than with a KeyError deep in the build
++        if scan not in SCANS:
++            raise ValueError(f"unknown scan {scan!r}; choose from {list(SCANS)}")
+         ch = [base_channels * 8, base_channels * 16, base_channels * 32]
+         self.backbone = SpatioTemporalBackbone(3, base_channels, num_frames, img_size)
+         self.pool = TemporalPooling()
+-        self.disp = DisplacementNet(ch, d_state=d_state, expand=1, theta=0.7)
++        # [mamba-tree] the chosen scan class is passed through to every DAM block
++        self.disp = DisplacementNet(
++            ch, d_state=d_state, expand=1, theta=0.7, tids_cls=SCANS[scan]
++        )
+         self.fpn = FPN(ch)
+         # width=0.5 halves the doubled in_channels back to ch
+         self.head = YOLOXHead(num_classes, width=0.5, in_channels=[c * 2 for c in ch])
+diff --git a/MOCID/train.py b/MOCID/train.py
+index 5138941..ce8d30d 100644
+--- a/MOCID/train.py
++++ b/MOCID/train.py
+@@ -276,7 +276,10 @@ def train_mocid(
+ 
+     stage1_ckpt: skip stage 1 and run stage 2 only, seeded from this stage-1
+     checkpoint (e.g. runs/server-r0/fista_best.pth)."""
+-    model = MOCID(num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]).to(device)
++    # [mamba-tree] d_state and scan now come from the config (defaults match the old behaviour)
++    model = MOCID(
++        num_frames=cfg.T, img_size=cfg.IMG_SIZE[0], d_state=cfg.D_STATE, scan=cfg.SCAN
++    ).to(device)
+     model = maybe_compile(model)
+ 
+     ensure_runs_dir()

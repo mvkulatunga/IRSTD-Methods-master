@@ -74,9 +74,12 @@ def parse_args():
 
 def build_model(cfg, device, name="MOCID"):
     """-> the model called name (a key of MODELS) on device."""
-    return MODELS[name](
-        num_classes=cfg.NUM_CLASSES, num_frames=cfg.T, img_size=cfg.IMG_SIZE[0]
-    ).to(device)
+    # [mamba-tree] MOCID also gets d_state and scan from the config; the ablation models have
+    # no DAM, so they are built exactly as before
+    kwargs = dict(num_classes=cfg.NUM_CLASSES, num_frames=cfg.T, img_size=cfg.IMG_SIZE[0])
+    if name == "MOCID":
+        kwargs.update(d_state=cfg.D_STATE, scan=cfg.SCAN)
+    return MODELS[name](**kwargs).to(device)
 
 
 def load_weights(model, ckpt_path):
